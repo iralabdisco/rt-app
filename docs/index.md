@@ -1,4 +1,6 @@
-# RT-APP
+#### [🏡 Home](https://jack23247.github.io/rt-app/index) ◾ [📚 Repo](https://github.com/jack23247/rt-app)
 
-## Menu
-- [Diagrams](.\diags.md)
+---
+
+## Sitemap
+- [Diagrams](https://jack23247.github.io/rt-app/diags)
