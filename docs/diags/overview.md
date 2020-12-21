@@ -5,18 +5,18 @@
 
 ```mermaid
 graph TD
-	subgraph OVERVIEW ["OVERVIEW [21-DEC-2020  19:05]"]
+	subgraph OVERVIEW ["OVERVIEW [21-DEC-2020  19:27]"]
 		subgraph ONLINE ["Online (RT)"]
 			%% DATA
-			wheel_data>"WHEEL_DATA:<br/>DeviceDriver"]
-			lidar_data>"LIDAR_DATA:<br/>DeviceDriver"]
-			cmd_stream{{"MOV_CMD:<br/>OStream (???)"}}
+			wheel_data>"WHEEL_DATA: DeviceDriver"]
+			lidar_data>"LIDAR_DATA: DeviceDriver"]
+			cmd_stream{{"MOV_CMD: OStream (???)"}}
 
 			subgraph ODOMETRY
 			odo_freq([ODO_FREQ])
-				odo_msgq[/"ODOMETRY:<br/>MessageQueue"/]
+				odo_msgq[/"ODOMETRY: MessageQueue"/]
 
-				odo_proc["ODOMETRY:<br/>Process"]
+				odo_proc["ODOMETRY: Process"]
 
 				odo_freq --> odo_proc
 				odo_proc --> odo_msgq
@@ -25,9 +25,9 @@ graph TD
 
 			subgraph AMCL
 				amcl_freq([AMCL_FREQ])
-				amcl_msgq[/"AMCL_POSE:<br/>MessageQueue"/]
+				amcl_msgq[/"AMCL_POSE: MessageQueue"/]
 
-				amcl_proc["COSTMAP:<br/>Process"]
+				amcl_proc["COSTMAP: Process"]
 
 				amcl_freq --> amcl_proc
 				amcl_proc --> amcl_msgq
@@ -36,9 +36,9 @@ graph TD
 
 			subgraph POSE_MGR
 				pm_freq([POSE_MGR_FREQ])
-				pm_msgq[/POSE_QUEUE:<br/>MessageQueue/]
+				pm_msgq[/POSE_QUEUE: MessageQueue/]
 
-				pm_proc["POSE_MGR:<br/>Process"]
+				pm_proc["POSE_MGR: Process"]
 
 				pm_freq --> pm_proc
 				odo_msgq ---> pm_proc
@@ -48,9 +48,9 @@ graph TD
 
 			subgraph COSTMAP
 				lcm_freq([COSTMAP_FREQ])
-				lcm_shm[("LCOSTMAP:<br/>SharedMem<br/>+Semaphore")]
+				lcm_shm[("LCOSTMAP: SharedMem+Semaphore")]
 
-				lcm_proc["COSTMAP:<br/>Process"]
+				lcm_proc["COSTMAP: Process"]
 
 				lcm_freq --> lcm_proc
 				lcm_proc --> lcm_shm
@@ -60,7 +60,7 @@ graph TD
 			subgraph LOC_PLAN
 				lpl_freq([LOC_PLAN_FREQ])
 
-				lpl_proc[LOC_PLAN:<br/>Process]
+				lpl_proc[LOC_PLAN: Process]
 
 				lpl_freq --> lpl_proc
 				pm_msgq ---> lpl_proc
@@ -73,13 +73,13 @@ graph TD
 
 		subgraph OFFLINE ["Offline"]
 			subgraph GLOB_PLAN
-				gpl_path[(GLOB_PATH:<br/>SharedMem)]
+				gpl_path[(GLOB_PATH: SharedMem)]
 
 				gpl_parms([PARAMETERS])
 				gpl_goal([GOAL])
 				gpl_costmap(["GLOB_COSTMAP"])
 
-				gpl_proc["GLOB_PLAN:<br/>Process"]
+				gpl_proc["GLOB_PLAN: Process"]
 
 				gpl_parms --> gpl_proc
 				gpl_goal --> gpl_proc
