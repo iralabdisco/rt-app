@@ -23,11 +23,6 @@ The diagram that follows is an overview of the components of RT-APP.
 
 *[Source](https://jack23247.github.io/rt-app/diags/legend)*
 
-
-### Flowchart
-
-The flowchart is not ready yet.
-
 ### Timing Charts
 
 |              Supersedes              |
