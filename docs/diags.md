@@ -13,13 +13,13 @@ This section contains SVG (which means zoomable) versions of the various diagram
 
 The diagram that follows is an overview of the components of RT-APP.
 
-![](.\diags\svg\overview.svg)
+![FATAL! Unable to render `overview.svg` - Please notify @jack23247](.\diags\svg\overview.svg)
 
 *[Source](https://jack23247.github.io/rt-app/diags/overview)*
 
 ### Legend
 
-![](.\diags\svg\legend.svg)
+![FATAL! Unable to render `legend.svg` - Please notify @jack23247](.\diags\svg\legend.svg)
 
 *[Source](https://jack23247.github.io/rt-app/diags/legend)*
 
@@ -31,8 +31,13 @@ The diagram that follows is an overview of the components of RT-APP.
 
 The timing charts are a variation of the flowchart that tries to explain how the various components of RT-APP interact over time.
 
-![](.\diags\svg\timing_chart_a.svg)
+![FATAL! Unable to render `timing_chart_a.svg` - Please notify @jack23247](.\diags\svg\timing_chart_a.svg)
 
 *[Source](https://jack23247.github.io/rt-app/diags/timing_chart_a)*
+
+![FATAL! Unable to render `timing_chart_b.svg` - Please notify @jack23247](.\diags\svg\timing_chart_b.svg)
+
+*[Source](https://jack23247.github.io/rt-app/diags/timing_chart_b)*
+
 
 <!-- EOF -->
