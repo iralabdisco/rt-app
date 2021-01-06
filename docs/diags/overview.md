@@ -4,8 +4,8 @@
 ---
 
 ```mermaid
-graph TD
-	subgraph OVERVIEW ["OVERVIEW [21-DEC-2020  19:27]"]
+flowchart TD
+	subgraph OVERVIEW ["OVERVIEW [02-JAN-2021  14:39]"]
 		subgraph ONLINE ["Online (RT)"]
 			%% DATA
 			wheel_data>"WHEEL_DATA: DeviceDriver"]
@@ -27,7 +27,7 @@ graph TD
 				amcl_freq([AMCL_FREQ])
 				amcl_msgq[/"AMCL_POSE: MessageQueue"/]
 
-				amcl_proc["COSTMAP: Process"]
+				amcl_proc["AMCL: Process"]
 
 				amcl_freq --> amcl_proc
 				amcl_proc --> amcl_msgq
@@ -44,6 +44,7 @@ graph TD
 				odo_msgq ---> pm_proc
 				amcl_msgq ---> pm_proc
 				pm_proc --> pm_msgq
+				amcl_proc <----> pm_proc
 			end
 
 			subgraph COSTMAP
