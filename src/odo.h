@@ -1,7 +1,9 @@
 #ifndef ODO_H
 #define ODO_H
 
-#define DBG_TEST_TRACE
+// #define DBG_TEST_TRACE 
+#define MAX_ITERS 100
+#define CUT_SHORT
 
 // rant
 // WHY DO I HAVE TO CHEAT INTELLISENSE!?!!
@@ -68,6 +70,12 @@ typedef struct posebuf {
     pose_t a;
     pose_t b;
 } posebuf_t;
+
+typedef struct o_stats {
+    uint32_t targetIterations;
+    uint32_t totalIterations;
+    uint32_t clockMisses;
+} o_stats_t;
 
 void* O_Worker(void* p);
 
