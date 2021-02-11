@@ -1,3 +1,7 @@
+### Doxygen ###
+/src/html
+
+### C ###
 # Prerequisites
 *.d
 

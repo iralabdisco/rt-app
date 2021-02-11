@@ -6,15 +6,16 @@ CFLAGS=-I. -std=c99 -Wall -Wextra -pedantic
 LDFLAGS=-pthread -lm -lrt
 DEPS = odo.h schedutil.h
 OBJ = main.o odo.o
+APPNAME = rt-app.x86_64
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS) $(BFLAGS) $(LDFLAGS)
 
-odo: $(OBJ)
+$(APPNAME): $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(BFLAGS) $(LDFLAGS)
 
 # Target "clean" - Operazione di pulizia
 .PHONY: clean
 
 clean:
-	rm -rf *.o odo
+	rm -rf *.o $(APPNAME)

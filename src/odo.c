@@ -13,6 +13,15 @@ void O_InitPoseBuf(posebuf_t* pb) {
     // memcpy(&pb->b, &pb->a, sizeof(pose_t));
 }
 
+/**
+ * @brief Print a trace of what the worker is doing. \b DANGER! It uses
+ * #printf() which is not RT-safe.
+ *
+ * @param pb A pointer to the #posebuffer to debug
+ * @param iterCount A pointer to a variable holding a count of total iterations
+ * @param errCount A pointer to a variable holding a count of the times the
+ * clock mislabeled a pose
+ */
 void O_PrintTrace(posebuf_t* pb, int* iterCount, int* errCount) {
     printf("\n");
     pose_t* cur;
@@ -69,7 +78,7 @@ void O_DLMissHandler(int sig) {
  * @param args A pointer to a memory area representing arguments. By default,
  * NULL is passed. This could be useful if we have a thread pool, see
  * https://computing.llnl.gov/tutorials/pthreads/
- * @return void* ??
+ * @return void* Nothing is returned.
  */
 void* O_Worker(void* args) {
     struct sched_attr attr = {.size = sizeof(attr),
@@ -81,9 +90,9 @@ void* O_Worker(void* args) {
     (void)signal(SIGXCPU, O_DLMissHandler);  // Register signal handler
     if (sched_setattr(0, &attr, 0)) {
         perror("O_Worker: sched_setattr");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
-    printf("O_Worker: OK!\n");
+    //printf("O_Worker: OK!\n");
     // BEGIN Worker variables
     arc_t sx = 0;  // TODO Encoder getfrom protobuf
     arc_t dx = 0;
@@ -94,12 +103,16 @@ void* O_Worker(void* args) {
     // XXX <-- DA VAGLIARE MI FANNO IL CULO
     // Granularità vs. Risoluzione
     // Velocità della richiesta
+    // https://elinux.org/High_Resolution_Timers dà una risposta sommaria, il
+    // timer è basato sullo "jiffy", che è un'unità di misura di tempo interna
+    // del kernel che varia in base all'architettura. Possiamo inoltre fare `cat
+    // /proc/timer_list` per vedere una lista dei timer e delle loro capacità.
     if (clock_gettime(CLOCK_MONOTONIC, &gts) == -1) {
-        perror("clock_gettime");
+        perror("O_Worker: clock_gettime");
         exit(EXIT_FAILURE);
     }
     double bts = gts.tv_sec * 1e6 + gts.tv_nsec;
-    printf("BTS: %f\n", bts);
+    //printf("BTS: %f\n", bts);
     // End Timing Stuff
     int iterCount = 0;
     int errCount = 0;
@@ -114,16 +127,16 @@ void* O_Worker(void* args) {
         arc_t delta = sx - dx;
         // XXX vedi sopra
         if (clock_gettime(CLOCK_MONOTONIC, &gts) == -1) {
-            perror("clock_gettime");
+            perror("O_Worker: clock_gettime");
             exit(EXIT_FAILURE);
         }
         cur->ts = (gts.tv_sec * 1e6 + gts.tv_nsec) - bts;
+        // TODO proofread & static test
         if (delta == 0) {  // We are going forward
             cur->x = pb.old->x + cos(pb.old->th) * delta;
             cur->y = pb.old->y + sin(pb.old->th) * delta;
             cur->th = pb.old->th;
         } else {  // We are going left or right
-            // XXX not verified
             cur->x = pb.old->x -
                      (b / 2 + dx * b / delta) * (sin(pb.old->th - delta) / b) -
                      sin(pb.old->th);
@@ -138,6 +151,7 @@ void* O_Worker(void* args) {
         // END Worker code
         sched_yield();
     };
-    printf("O_Worker: Removing\n");
-    pthread_exit(0);
+    //printf("O_Worker: Removing\n");
+    pthread_exit(EXIT_SUCCESS);
+    return(NULL);
 }
