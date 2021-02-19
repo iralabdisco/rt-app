@@ -4,6 +4,10 @@
 ### Doxygen ###
 /src/html
 
+### VS Code ###
+/.vscode
+/src/.vscode
+
 ### C ###
 # Prerequisites
 *.d
