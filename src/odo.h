@@ -1,7 +1,7 @@
 #ifndef ODO_H
 #define ODO_H
 
-// #define DBG_TEST_TRACE 
+// #define DBG_TEST_TRACE
 #define MAX_ITERS 100
 #define CUT_SHORT
 
