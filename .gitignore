@@ -1,8 +1,11 @@
-### Dependencies ###
+### Build output ###
+/.build
+
+### Dependencies' trees ###
 /src/deps/nanopb-0.4.4
 
 ### Doxygen ###
-/src/html
+/html
 
 ### VS Code ###
 /.vscode

@@ -1,12 +1,9 @@
-#define _GNU_SOURCE
-
 #include <assert.h>
 #include <pthread.h>
 
-#include "odo.h"
+#include "modules/odo.h"
 
-/** @enum workerIds
- * @brief An enumeration of the workers' IDs in the worker definitions array.
+/** @brief An enumeration of the workers' IDs in the worker definitions array.
  * Note: insert all of the workers _before_ W_WORKERS, as it is used to
  * determine the workers array size.
  */

@@ -89,6 +89,8 @@ void O_DLMissHandler(int sig) {
  * @return void* Nothing is returned.
  */
 void* O_Worker(void* args) {
+    assert(args == NULL);  // Ensure we are not passing arguments (I admit doing
+                           // this only to remove a compile-time warning)
     struct sched_attr attr = {
         .size = sizeof(attr),
         .sched_flags = 0 | SCHED_FLAG_DL_OVERRUN,
@@ -105,7 +107,11 @@ void* O_Worker(void* args) {
     arc_t sx = 0;  // TODO Encoder, implement protobuf adapter
     arc_t dx = 0;
     posebuf_t pb;
-    double b = 0;  // TODO Define distance between wheel contact points
+    double b = 0.435; /* Federica Di Lauro, [06.02.21 15:08]
+                       * [In reply to Federica Di Lauro]
+                       * questo è quello di otto, non ricordo cosa venisse fuori
+                       * per l'esercizio di matlab
+                       **/
     o_stats_t stats = {
         .targetIterations = MAX_ITERS, .totalIterations = 0, .clockMisses = 0};
     struct timespec gts;
@@ -131,7 +137,7 @@ void* O_Worker(void* args) {
             pb.old;  // Select the pose to work on in the current iteration
         pb.old = pb.old->next;  // And mark the other one as disposable
         arc_t delta = sx - dx;
-        if (clock_gettime(CLOCK_MONOTONIC, &gts) == -1) { // ts update
+        if (clock_gettime(CLOCK_MONOTONIC, &gts) == -1) {  // ts update
             perror("O_Worker: clock_gettime");
             exit(EXIT_FAILURE);
         }

@@ -4,7 +4,7 @@
 
 #---------------------------------------------------------------------------
 
-INPUT                  = ./
+INPUT                  = ./src
 PROJECT_NAME           = "rt-app"
 PROJECT_BRIEF          = "Linux as a Real-Time Operating System Project - Demo Application"
 OUTPUT_LANGUAGE        = English
