@@ -25,7 +25,8 @@
  * @brief A datatype representing an arc
  *
  */
-typedef double arc_t;  // TODO arc, what is this?
+typedef double arc_t;  // TODO arc, what is this? A: An arc is a value in meters
+                       // (centimeters?)
 
 /** @struct pose
  *  @brief A structure representing a pose, and the building block for the
@@ -52,7 +53,7 @@ typedef double arc_t;  // TODO arc, what is this?
  */
 typedef struct pose {
     double ts;
-    double x, y, th;  // TODO naming
+    double x, y, th;
     struct pose* next;
 } pose_t;
 

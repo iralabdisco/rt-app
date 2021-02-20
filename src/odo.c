@@ -102,7 +102,7 @@ void* O_Worker(void* args) {
         exit(EXIT_FAILURE);
     }
     // BEGIN Worker variables
-    arc_t sx = 0;  // TODO Encoder getfrom protobuf
+    arc_t sx = 0;  // TODO Encoder, implement protobuf adapter
     arc_t dx = 0;
     posebuf_t pb;
     double b = 0;  // TODO Define distance between wheel contact points
@@ -131,8 +131,7 @@ void* O_Worker(void* args) {
             pb.old;  // Select the pose to work on in the current iteration
         pb.old = pb.old->next;  // And mark the other one as disposable
         arc_t delta = sx - dx;
-        // XXX vedi sopra
-        if (clock_gettime(CLOCK_MONOTONIC, &gts) == -1) {
+        if (clock_gettime(CLOCK_MONOTONIC, &gts) == -1) { // ts update
             perror("O_Worker: clock_gettime");
             exit(EXIT_FAILURE);
         }
