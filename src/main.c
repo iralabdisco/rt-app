@@ -5,7 +5,7 @@
 
 #include "m_odo.h"
 
-/** @enum workerIds
+/** @enum wid
  * @brief An enumeration of the workers' IDs in the worker definitions array.
  * Note: insert all of the workers _before_ W_WORKERS, as it is used to
  * determine the workers array size.
@@ -27,12 +27,10 @@ typedef struct worker {
 int main(void) {  // Dispatcher
     worker_t workers[W_WORKERS];
     workers[W_ODO].entry = MOdo_EntryPoint;
-    for (int i = 0; i < W_WORKERS; i++) {
-        // Dispatch workers
+    for (int i = 0; i < W_WORKERS; i++) {  // Dispatch workers
         pthread_create(&(workers[i].tid), NULL, workers[i].entry, NULL);
     }
-    for (int i = 0; i < W_WORKERS; i++) {
-        // Wait for worker termination
+    for (int i = 0; i < W_WORKERS; i++) {  // Wait for worker termination
         pthread_join(workers[i].tid, NULL);
     }
     pthread_exit(0);  // Failsafe, not really needed

@@ -6,6 +6,7 @@
 
 #define MAX_ITERS 100
 
+#include <assert.h>
 #include <math.h>
 #include <memory.h>
 #include <stdint.h>
@@ -55,9 +56,9 @@ typedef struct pose {
  *  @brief A structure representing a two-pose circular buffer
  *  @var posebuf::old
  *  A pointer to the pose that was not updated in the last iteration
- *  @var pose::a
+ *  @var posebuf::a
  *  The first cell of the buffer
- *  @var pose::y
+ *  @var posebuf::b
  *  The second cell of the buffer
  */
 typedef struct posebuf {

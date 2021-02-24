@@ -3,7 +3,7 @@
 
 #include <time.h>
 
-// XXX <-- DA VAGLIARE MI FANNO IL CULO
+// XXX Importante, vedi http://projects.ira.disco.unimib.it/issues/1123
 // - Risoluzione Apparente (ad es. ms) vs. Risoluzione Effettiva (ad es. 55ms
 // DOS)
 // - Velocità della richiesta https://elinux.org/High_Resolution_Timers
@@ -27,7 +27,7 @@
 typedef struct timespec timespec_t;
 typedef long long int nsec_t;
 
-static nsec_t _timebase;
+static nsec_t _timebase;  // TODO Reimplement timebase?
 
 /** @brief Convert timespec to nanoseconds
  *  @param ts pointer to the timespec variable to be converted
