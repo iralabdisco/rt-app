@@ -1,70 +1,57 @@
 #ifndef OTTO_H
 #define OTTO_H
 
+#include <fcntl.h>
+#include <termios.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 #include "../deps/nanopb-0.4.4/pb_decode.h"
 #include "../deps/nanopb-0.4.4/pb_encode.h"
 
-void* A_Otto_RecvMsg() {
-    /* This is the buffer where we will store our message. */
-    uint8_t buffer[128];
-    size_t message_length;
-    bool status;
+int open_port(const char* port, int baud, int timeout) {
+    int fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
+    struct termios settings;
+    speed_t baudrate = baud;
 
-    /* Encode our message */
-    {
-        /* Allocate space on the stack to store the message data.
-         *
-         * Nanopb generates simple struct definitions for all the messages.
-         * - check out the contents of simple.pb.h!
-         * It is a good idea to always initialize your structures
-         * so that you do not have garbage data from RAM in there.
-         */
-        SimpleMessage message = SimpleMessage_init_zero;
+    tcgetattr(fd, &settings);
+    cfsetispeed(&settings, baudrate);
 
-        /* Create a stream that will write to our buffer. */
-        pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-
-        /* Fill in the lucky number */
-        message.lucky_number = 13;
-
-        /* Now we are ready to encode the message! */
-        status = pb_encode(&stream, SimpleMessage_fields, &message);
-        message_length = stream.bytes_written;
-
-        /* Then just check for any errors.. */
-        if (!status) {
-            printf("Encoding failed: %s\n", PB_GET_ERROR(&stream));
-            return 1;
-        }
-    }
-
-    /* Now we could transmit the message over network, store it in a file or
-     * wrap it to a pigeon's leg.
+    settings.c_cflag &= ~PARENB; /* no parity */
+    settings.c_cflag &= ~CSTOPB; /* 1 stop bit */
+    settings.c_cflag &= ~CSIZE;
+    settings.c_cflag |= CS8 | CLOCAL; /* 8 bits */
+    /* echo off, echo newline off, canonical mode off,
+     * extended input processing off, signal chars off
      */
+    settings.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | ISIG);
+    settings.c_oflag = 0; /* Turn off output processing */
+    settings.c_cflag &= ~CRTSCTS;
+    /* Read settings :
+     * To understand the settings have a look at man 3 termios
+     * ``Canonical and noncanonical mode`` section
+     */
+    settings.c_cc[VMIN] = 1;             /* read doesn't block */
+    settings.c_cc[VTIME] = timeout * 10; /* read timeout in ds */
+    settings.c_cflag |= CREAD;
 
-    /* But because we are lazy, we will just decode it immediately. */
+    /* Flush Port, then applies attributes */
+    tcflush(fd, TCIFLUSH);
+    if (tcsetattr(fd, TCSANOW, &settings) < 0) /* apply the settings */
+        return -1;
 
-    {
-        /* Allocate space for the decoded message. */
-        SimpleMessage message = SimpleMessage_init_zero;
+    return fd;
+}
 
-        /* Create a stream that reads from the buffer. */
-        pb_istream_t stream = pb_istream_from_buffer(buffer, message_length);
-
-        /* Now we are ready to decode the message. */
-        status = pb_decode(&stream, SimpleMessage_fields, &message);
-
-        /* Check for errors... */
-        if (!status) {
-            printf("Decoding failed: %s\n", PB_GET_ERROR(&stream));
-            return 1;
-        }
-
-        /* Print the data contained in the message. */
-        printf("Your lucky number was %d!\n", (int)message.lucky_number);
+void* A_Otto_RecvMsg() {
+    char* port = "/dev/ttyUSB1000";
+    int baud = 9600;
+    int timeout = 0;
+    int fd = open_port(port, baud, timeout);
+    if (fd == -1) {
+        perror("A_Otto_RecvMsg():");
+        exit(EXIT_FAILURE);
     }
-
-    return 0;
 }
 
 #endif  // OTTO_H
