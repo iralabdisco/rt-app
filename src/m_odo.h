@@ -12,12 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-<<<<<<< HEAD:src/m_odo.h
 #include "h_sched.h"
 #include "h_time.h"
-=======
-#include "schedutil.h"
->>>>>>> parent of 1a05121... New build model, fixed minor issue in posebuf's brief, initial otto adapter skel:src/odo.h
 
 /**
  * @brief A datatype representing an arc

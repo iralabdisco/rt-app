@@ -89,14 +89,10 @@ void deadline_miss_handler(int sig) {
  * https://computing.llnl.gov/tutorials/pthreads/
  * @return void* Nothing is returned.
  */
-<<<<<<< HEAD:src/m_odo.c
 void* MOdo_EntryPoint(void* args) {
     assert(args ==
            NULL);  // Ensure we are not passing arguments (I admit doing
                    // this only to remove a compile-time warning)
-=======
-void* O_Worker(void* args) {
->>>>>>> parent of 1a05121... New build model, fixed minor issue in posebuf's brief, initial otto adapter skel:src/odo.c
     struct sched_attr attr = {
         .size = sizeof(attr),
         .sched_flags = 0 | SCHED_FLAG_DL_OVERRUN,
@@ -114,7 +110,6 @@ void* O_Worker(void* args) {
     arc_t sx = 0;  // TODO Encoder, implement protobuf adapter
     arc_t dx = 0;
     posebuf_t pb;
-<<<<<<< HEAD:src/m_odo.c
     double b = 0.435; /* Federica Di Lauro, [06.02.21 15:08]
                        * [In reply to Federica Di Lauro]
                        * questo è quello di otto, non ricordo cosa venisse
@@ -123,11 +118,6 @@ void* O_Worker(void* args) {
     odoStats_t stats = {.targetIterations = MAX_ITERS,
                         .totalIterations = 0,
                         .clockMisses = 0};
-=======
-    double b = 0;  // TODO Define distance between wheel contact points
-    o_stats_t stats = {
-        .targetIterations = MAX_ITERS, .totalIterations = 0, .clockMisses = 0};
->>>>>>> parent of 1a05121... New build model, fixed minor issue in posebuf's brief, initial otto adapter skel:src/odo.c
     struct timespec gts;
     // END Worker variables
     MOdo_initPoseBuffer(&pb);
@@ -139,16 +129,8 @@ void* O_Worker(void* args) {
             pb.old;  // Select the pose to work on in the current iteration
         pb.old = pb.old->next;  // And mark the other one as disposable
         arc_t delta = sx - dx;
-<<<<<<< HEAD:src/m_odo.c
         cur->ts = HTime_GetNsDelta(&gts);
         printf("%llu,", cur->ts);
-=======
-        if (clock_gettime(CLOCK_MONOTONIC, &gts) == -1) { // ts update
-            perror("O_Worker: clock_gettime");
-            exit(EXIT_FAILURE);
-        }
-        cur->ts = (gts.tv_sec * 1e6 + gts.tv_nsec) - bts;
->>>>>>> parent of 1a05121... New build model, fixed minor issue in posebuf's brief, initial otto adapter skel:src/odo.c
         // TODO proofread & static test
         if (delta == 0) {  // We are going forward
             cur->x = pb.old->x + cos(pb.old->th) * delta;

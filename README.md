@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # rt-app
 
 Sources for a real-time mobile robotics application exploiting the Linux kernel and SCHED_DEADLINE.
@@ -47,6 +46,3 @@ The project follows a modular approach: each module must implement a quite basic
    1. Traslo in CIR (discorde con y)
    1. Ruoto (discorde $\Delta\theta$)
    1. Ritraslo (concorde con y)
-=======
-# rt-app
->>>>>>> parent of 1a05121... New build model, fixed minor issue in posebuf's brief, initial otto adapter skel

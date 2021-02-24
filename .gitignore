@@ -2,11 +2,10 @@
 /src/deps/nanopb-0.4.4
 
 ### Doxygen ###
-/src/html
+/html
 
 ### VS Code ###
 /.vscode
-/src/.vscode
 
 ### C ###
 # Prerequisites

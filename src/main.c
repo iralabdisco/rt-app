@@ -3,11 +3,7 @@
 #include <assert.h>
 #include <pthread.h>
 
-<<<<<<< HEAD
 #include "m_odo.h"
-=======
-#include "odo.h"
->>>>>>> parent of 1a05121... New build model, fixed minor issue in posebuf's brief, initial otto adapter skel
 
 /** @enum workerIds
  * @brief An enumeration of the workers' IDs in the worker definitions array.
