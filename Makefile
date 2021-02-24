@@ -7,7 +7,7 @@ BFLAGS = -O0 -ggdb #-O3
 CFLAGS = -I. -std=gnu99 -Wall -Wextra -pedantic
 WITH = -pthread -lrt -lm
 
-MODULES   := src src/modules # src/adapters deps
+MODULES   := src # deps
 SRC_DIR   := $(addprefix ./,$(MODULES))
 BUILD_DIR := $(addprefix .build/,$(MODULES))
 

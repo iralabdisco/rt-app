@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # rt-app
 
 Sources for a real-time mobile robotics application exploiting the Linux kernel and SCHED_DEADLINE.
@@ -21,19 +20,12 @@ The application is currently structured as a single process, which in turn spawn
 
 ## Structure
 
-The project is structured as follows:
+The folder is structured as follows:
 
-- `docs` - The project's documentation
-- `src` - The demo application's source code
-   - `deps/` - Project dependencies, see `deps.txt`
-   - `main.c` - The entry point of the application, and core of the dispatcher
-   - `h_*.h` - Helpers and hooks
-     - `h_sched.h` - Useful hooks for scheduling and such
-     - `h_time.h` - Hooks to interact with timers and to do timestamping
-   - `a_*.<c,h>` - Adapters for hardware platforms
-     - `a_otto.<c,h>` - The adapter for IRAlab's OTTO mobile platform
-   - `m_*.<c,h>` - The modules of the application, each exposing a worker
-     - `m_odo.<c,h>` - The Odometry module
+- `main.c` - The entry point of the application, and core of the dispatcher (about two `for` loops)
+- `odo.c`/`odo.h` - The Odometry module
+- `schedutil.h` - Useful hooks for scheduling and such
+- `deps/` - Project dependencies, see `deps.txt`
 
 ## Modules
 
@@ -47,6 +39,3 @@ The project follows a modular approach: each module must implement a quite basic
    1. Traslo in CIR (discorde con y)
    1. Ruoto (discorde $\Delta\theta$)
    1. Ritraslo (concorde con y)
-=======
-# rt-app
->>>>>>> parent of 1a05121... New build model, fixed minor issue in posebuf's brief, initial otto adapter skel

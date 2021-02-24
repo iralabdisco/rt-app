@@ -906,7 +906,7 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = deps/
+EXCLUDE                = src/deps/
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1032,7 +1032,7 @@ SOURCE_BROWSER         = YES
 
 # Setting the INLINE_SOURCES tag to YES will include the body of functions,
 # classes and enums directly into the documentation.
-# The default value is: NO.
+# The default value is: NO.perror
 
 INLINE_SOURCES         = YES
 

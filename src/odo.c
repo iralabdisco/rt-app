@@ -1,4 +1,4 @@
-#include "odo.h"
+#include "m_odo.h"
 
 #ifdef DBG_TEST_TRACE
 /**
@@ -6,11 +6,12 @@
  * #printf() which is not RT-safe.
  *
  * @param pb A pointer to the #posebuffer to debug
- * @param iterCount A pointer to a variable holding a count of total iterations
- * @param errCount A pointer to a variable holding a count of the times the
+ * @param itercount A pointer to a variable holding a count of total
+ * iterations
+ * @param errcount A pointer to a variable holding a count of the times the
  * clock mislabeled a pose
  */
-void O_PrintTrace(posebuf_t* pb, int* iterCount, int* errCount) {
+void MOdometry_PrintTestTrace(posebuf_t* pb, int* itercount, int* errcount) {
     printf("\n");
     pose_t* cur;
     double elapsed;
@@ -22,7 +23,7 @@ void O_PrintTrace(posebuf_t* pb, int* iterCount, int* errCount) {
         cur = &pb->a;
     }
     printf(
-        "Timestamp:\t\t%g\n"
+        "Timestamp:\t\t%llu\n"
         "Values:\tX:\t\t%f\n"
         "\tY:\t\t%f\n"
         "\tAlpha:\t\t%f\n",
@@ -32,15 +33,15 @@ void O_PrintTrace(posebuf_t* pb, int* iterCount, int* errCount) {
         printf("Elapsed (ns): %.0f", elapsed);
         if (elapsed < 0) {
             printf("\tCLOCK MISS!");
-            (*errCount)++;
+            (*errcount)++;
         }
     }
     if (cur->next != pb->old)
         printf("\n-- ERROR --\n Pointer swap inconsistent.\n");
-    (*iterCount)++;
-    printf("\nIter:\tTotal: %d\n\tErrors: %d\n\tRate: %g%%\n", *iterCount,
-           *errCount, (*errCount) / (*iterCount) * 100.0);
-    if (*iterCount == 10) {
+    (*itercount)++;
+    printf("\nIter:\tTotal: %d\n\tErrors: %d\n\tRate: %g%%\n", *itercount,
+           *errcount, (*errcount) / (*itercount) * 100.0);
+    if (*itercount == 10) {
         printf(
             "\n-- DEBUG --\nTest trace termination after 10 iterations.\n"
             "Exiting.\n");
@@ -49,7 +50,7 @@ void O_PrintTrace(posebuf_t* pb, int* iterCount, int* errCount) {
 }
 #endif
 
-void O_PrintStats(o_stats_t* stats) {
+void MOdo_PrintStatsCold(const odoStats_t* stats) {
     printf("Statistics (cold):\nIterations:\t%d\nClock Errors:\t%d\n",
            stats->totalIterations, stats->clockMisses);
     return;
@@ -61,7 +62,7 @@ void O_PrintStats(o_stats_t* stats) {
  *
  * @param pb A pointer to the posebuffer to be initialized
  */
-void O_InitPoseBuf(posebuf_t* pb) {
+void MOdo_initPoseBuffer(posebuf_t* pb) {
     pb->old = &pb->a;
     pb->a = (pose_t){.ts = 0, .x = 0, .y = 0, .th = 0, .next = &pb->b};
     pb->b = (pose_t){.ts = 0, .x = 0, .y = 0, .th = 0, .next = &pb->a};
@@ -74,8 +75,8 @@ void O_InitPoseBuf(posebuf_t* pb) {
  *
  * @param sig The number of the received signal.
  */
-void O_DLMissHandler(int sig) {
-    printf("O_Worker: Deadline miss detected (0x%4x)\n", sig);
+void deadline_miss_handler(int sig) {
+    printf("MOdo_EntryPoint: Deadline miss detected (0x%4x)\n", sig);
     // TODO what to do when a deadline is missed
     //(void)signal(SIGXCPU, SIG_DFL);
 }
@@ -88,48 +89,49 @@ void O_DLMissHandler(int sig) {
  * https://computing.llnl.gov/tutorials/pthreads/
  * @return void* Nothing is returned.
  */
+<<<<<<< HEAD:src/m_odo.c
+void* MOdo_EntryPoint(void* args) {
+    assert(args ==
+           NULL);  // Ensure we are not passing arguments (I admit doing
+                   // this only to remove a compile-time warning)
+=======
 void* O_Worker(void* args) {
-    assert(args == NULL);  // Ensure we are not passing arguments (I admit doing
-                           // this only to remove a compile-time warning)
+>>>>>>> parent of 1a05121... New build model, fixed minor issue in posebuf's brief, initial otto adapter skel:src/odo.c
     struct sched_attr attr = {
         .size = sizeof(attr),
         .sched_flags = 0 | SCHED_FLAG_DL_OVERRUN,
         .sched_policy = SCHED_DEADLINE,
-        .sched_runtime = 10 * 1000 * 1000,    // 10ms
-        .sched_period = 20 * 1000 * 1000,     //* 1000,  // 2s
-        .sched_deadline = 11 * 1000 * 1000};  // 11ms
-    (void)signal(SIGXCPU, O_DLMissHandler);   // Register signal handler
+        .sched_runtime = 10 * 1000 * 1000,  // 10ms
+        .sched_period =
+            20 * 1000 * 1000,  //* 1000,  // 2s // HACK cos'è cambiato?
+        .sched_deadline = 11 * 1000 * 1000};       // 11ms
+    (void)signal(SIGXCPU, deadline_miss_handler);  // Register signal handler
     if (sched_setattr(0, &attr, 0)) {
-        perror("O_Worker: sched_setattr");
+        perror("MOdo_EntryPoint: sched_setattr");
         exit(EXIT_FAILURE);
     }
     // BEGIN Worker variables
     arc_t sx = 0;  // TODO Encoder, implement protobuf adapter
     arc_t dx = 0;
     posebuf_t pb;
+<<<<<<< HEAD:src/m_odo.c
     double b = 0.435; /* Federica Di Lauro, [06.02.21 15:08]
                        * [In reply to Federica Di Lauro]
-                       * questo è quello di otto, non ricordo cosa venisse fuori
-                       * per l'esercizio di matlab
+                       * questo è quello di otto, non ricordo cosa venisse
+                       *fuori per l'esercizio di matlab
                        **/
+    odoStats_t stats = {.targetIterations = MAX_ITERS,
+                        .totalIterations = 0,
+                        .clockMisses = 0};
+=======
+    double b = 0;  // TODO Define distance between wheel contact points
     o_stats_t stats = {
         .targetIterations = MAX_ITERS, .totalIterations = 0, .clockMisses = 0};
+>>>>>>> parent of 1a05121... New build model, fixed minor issue in posebuf's brief, initial otto adapter skel:src/odo.c
     struct timespec gts;
-    // XXX <-- DA VAGLIARE MI FANNO IL CULO
-    // Granularità vs. Risoluzione
-    // Velocità della richiesta
-    // https://elinux.org/High_Resolution_Timers dà una risposta sommaria, il
-    // timer è basato sullo "jiffy", che è un'unità di misura di tempo interna
-    // del kernel che varia in base all'architettura. Possiamo inoltre fare `cat
-    // /proc/timer_list` per vedere una lista dei timer e delle loro capacità.
-    if (clock_gettime(CLOCK_MONOTONIC, &gts) == -1) {
-        perror("O_Worker: clock_gettime");
-        exit(EXIT_FAILURE);
-    }
-    double bts = gts.tv_sec * 1e6 + gts.tv_nsec;
-    // End Timing Stuff
-    O_InitPoseBuf(&pb);
     // END Worker variables
+    MOdo_initPoseBuffer(&pb);
+    HTime_InitBase();  // TODO Move Timebase init to main?
     for (;;) {
         // BEGIN Worker code
         // TODO Get values from sensors
@@ -137,23 +139,30 @@ void* O_Worker(void* args) {
             pb.old;  // Select the pose to work on in the current iteration
         pb.old = pb.old->next;  // And mark the other one as disposable
         arc_t delta = sx - dx;
-        if (clock_gettime(CLOCK_MONOTONIC, &gts) == -1) {  // ts update
+<<<<<<< HEAD:src/m_odo.c
+        cur->ts = HTime_GetNsDelta(&gts);
+        printf("%llu,", cur->ts);
+=======
+        if (clock_gettime(CLOCK_MONOTONIC, &gts) == -1) { // ts update
             perror("O_Worker: clock_gettime");
             exit(EXIT_FAILURE);
         }
         cur->ts = (gts.tv_sec * 1e6 + gts.tv_nsec) - bts;
+>>>>>>> parent of 1a05121... New build model, fixed minor issue in posebuf's brief, initial otto adapter skel:src/odo.c
         // TODO proofread & static test
         if (delta == 0) {  // We are going forward
             cur->x = pb.old->x + cos(pb.old->th) * delta;
             cur->y = pb.old->y + sin(pb.old->th) * delta;
             cur->th = pb.old->th;
         } else {  // We are going left or right
-            cur->x = pb.old->x -
-                     (b / 2 + dx * b / delta) * (sin(pb.old->th - delta) / b) -
-                     sin(pb.old->th);
-            cur->y = pb.old->y +
-                     (b / 2 + dx * b / delta) * (cos(pb.old->th - delta) / b) -
-                     cos(pb.old->th);
+            cur->x =
+                pb.old->x -
+                (b / 2 + dx * b / delta) * (sin(pb.old->th - delta) / b) -
+                sin(pb.old->th);
+            cur->y =
+                pb.old->y +
+                (b / 2 + dx * b / delta) * (cos(pb.old->th - delta) / b) -
+                cos(pb.old->th);
             cur->th = pb.old->th - delta / b;
         }
         stats.totalIterations++;
@@ -165,7 +174,7 @@ void* O_Worker(void* args) {
         // END Worker code
         sched_yield();
     };
-    O_PrintStats(&stats);
+    MOdo_PrintStatsCold(&stats);
     pthread_exit(EXIT_SUCCESS);
     return (NULL);
 }
