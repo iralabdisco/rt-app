@@ -13,6 +13,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "a_otto.h"
+#define USE_BASELINE OTTO_BASELINE
+
 #include "h_sched.h"
 #include "h_time.h"
 

@@ -1,13 +1,22 @@
 #ifndef A_OTTO_H
 #define A_OTTO_H
 
+#define OTTO_BASELINE 0.435
+/* Federica Di Lauro, [06.02.21 15:08]
+ * [In reply to Federica Di Lauro]                    \
+ * questo è quello di otto, non ricordo cosa venisse \
+ *fuori per l'esercizio di matlab                     \
+ **/
+
 #include <fcntl.h>
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
 
-#include "../deps/nanopb-0.4.4/pb_decode.h"
-#include "../deps/nanopb-0.4.4/pb_encode.h"
+#include "deps/nanopb-0.4.4/pb_decode.h"
+#include "deps/nanopb-0.4.4/pb_encode.h"
+
+#ifdef ENABLE_AOTTO
 
 // https://github.com/banetl/sensor_reading/blob/master/cpp/sensor_reading.cc
 int AOtto_InitSerialComms(const char* port, int baud, int timeout) {
@@ -54,5 +63,7 @@ void* AOtto_RecvMsg() {
         exit(EXIT_FAILURE);
     }
 }
+
+#endif
 
 #endif  // A_OTTO_H

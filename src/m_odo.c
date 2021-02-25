@@ -110,11 +110,7 @@ void* MOdo_EntryPoint(void* args) {
     arc_t sx = 0;  // TODO Encoder, implement protobuf adapter
     arc_t dx = 0;
     posebuf_t pb;
-    double b = 0.435; /* Federica Di Lauro, [06.02.21 15:08]
-                       * [In reply to Federica Di Lauro]
-                       * questo è quello di otto, non ricordo cosa venisse
-                       *fuori per l'esercizio di matlab
-                       **/
+    double b = USE_BASELINE;
     odoStats_t stats = {.targetIterations = MAX_ITERS,
                         .totalIterations = 0,
                         .clockMisses = 0};
