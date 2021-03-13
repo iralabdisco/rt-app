@@ -27,7 +27,9 @@
 typedef struct timespec timespec_t;
 typedef long long int nsec_t;
 
-static nsec_t _timebase;  // TODO Reimplement timebase?
+static nsec_t _timebase;  // TODO The implementation of timebase is yanky...
+                          // it could use a refactor, as I'd like to
+                          // initialize it just before launching the threads
 
 /** @brief Convert timespec to nanoseconds
  *  @param ts pointer to the timespec variable to be converted

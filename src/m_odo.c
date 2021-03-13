@@ -66,7 +66,6 @@ void MOdo_initPoseBuffer(posebuf_t* pb) {
     pb->old = &pb->a;
     pb->a = (pose_t){.ts = 0, .x = 0, .y = 0, .th = 0, .next = &pb->b};
     pb->b = (pose_t){.ts = 0, .x = 0, .y = 0, .th = 0, .next = &pb->a};
-    // memcpy(&pb->b, &pb->a, sizeof(pose_t));
 }
 
 /**
@@ -77,8 +76,9 @@ void MOdo_initPoseBuffer(posebuf_t* pb) {
  */
 void deadline_miss_handler(int sig) {
     printf("MOdo_EntryPoint: Deadline miss detected (0x%4x)\n", sig);
-    // TODO what to do when a deadline is missed
-    //(void)signal(SIGXCPU, SIG_DFL);
+    // TODO recovery, what to do when a deadline is missed? At the moment,
+    // we're launching the default handler
+    (void)signal(SIGXCPU, SIG_DFL);
 }
 
 /**
@@ -93,14 +93,12 @@ void* MOdo_EntryPoint(void* args) {
     assert(args ==
            NULL);  // Ensure we are not passing arguments (I admit doing
                    // this only to remove a compile-time warning)
-    struct sched_attr attr = {
-        .size = sizeof(attr),
-        .sched_flags = 0 | SCHED_FLAG_DL_OVERRUN,
-        .sched_policy = SCHED_DEADLINE,
-        .sched_runtime = 10 * 1000 * 1000,  // 10ms
-        .sched_period =
-            20 * 1000 * 1000,  //* 1000,  // 2s // HACK cos'è cambiato?
-        .sched_deadline = 11 * 1000 * 1000};       // 11ms
+    struct sched_attr attr = {.size = sizeof(attr),
+                              .sched_flags = 0 | SCHED_FLAG_DL_OVERRUN,
+                              .sched_policy = SCHED_DEADLINE,
+                              .sched_runtime = 10 * 1000 * 1000,    // 10ms
+                              .sched_period = 20 * 1000 * 1000,     // 20ms
+                              .sched_deadline = 11 * 1000 * 1000};  // 11ms
     (void)signal(SIGXCPU, deadline_miss_handler);  // Register signal handler
     if (sched_setattr(0, &attr, 0)) {
         perror("MOdo_EntryPoint: sched_setattr");
@@ -115,18 +113,24 @@ void* MOdo_EntryPoint(void* args) {
                         .totalIterations = 0,
                         .clockMisses = 0};
     struct timespec gts;
+    int ottoCharDeviceFd;
+    pb_byte_t buf[128];
+    StatusMessage msg = StatusMessage_init_zero;
     // END Worker variables
+    ottoCharDeviceFd = AOtto_InitSerialComms();
     MOdo_initPoseBuffer(&pb);
-    HTime_InitBase();  // TODO Move Timebase init to main?
+    HTime_InitBase();  // XXX see h_time.h
     for (;;) {
         // BEGIN Worker code
-        // TODO Get values from sensors
+        AOtto_ReadDeserialize(ottoCharDeviceFd, buf, msg);
+        // printf("A:%f,L:%f,T:%d,S:%d\n", msg.angular_velocity,
+        //       msg.linear_velocity, msg.delta_millis, msg.status);
         pose_t* cur =
             pb.old;  // Select the pose to work on in the current iteration
         pb.old = pb.old->next;  // And mark the other one as disposable
         arc_t delta = sx - dx;
         cur->ts = HTime_GetNsDelta(&gts);
-        printf("%llu,", cur->ts);
+        // printf("%llu,", cur->ts); // Allow for delta logging
         // TODO proofread & static test
         if (delta == 0) {  // We are going forward
             cur->x = pb.old->x + cos(pb.old->th) * delta;

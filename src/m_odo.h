@@ -23,8 +23,7 @@
  * @brief A datatype representing an arc
  *
  */
-typedef double arc_t;  // TODO arc, what is this? A: An arc is a value in
-                       // meters (centimeters?)
+typedef double arc_t;  // TODO formal definition of "arc" in doxygen comment
 
 /** @struct pose
  *  @brief A structure representing a pose, and the building block for the

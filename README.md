@@ -24,7 +24,6 @@ The project is structured as follows:
 
 - `docs` - The project's documentation
 - `src` - The demo application's source code
-   - `deps/` - Project dependencies, see `deps.txt`
    - `main.c` - The entry point of the application, and core of the dispatcher
    - `h_*.h` - Helpers and hooks
      - `h_sched.h` - Useful hooks for scheduling and such
@@ -33,6 +32,22 @@ The project is structured as follows:
      - `a_otto.<c,h>` - The adapter for IRAlab's OTTO mobile platform
    - `m_*.<c,h>` - The modules of the application, each exposing a worker
      - `m_odo.<c,h>` - The Odometry module
+
+## Building
+
+On apt-based system do:
+
+```
+$ sudo apt install build-essential git doxygen libnanopb-dev nanopb
+```
+
+to install dependencies, and:
+
+```
+$ make
+```
+
+to build an executable.
 
 ## Modules
 

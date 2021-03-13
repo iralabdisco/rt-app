@@ -1,69 +1,84 @@
 #ifndef A_OTTO_H
 #define A_OTTO_H
 
-#define OTTO_BASELINE 0.435
-/* Federica Di Lauro, [06.02.21 15:08]
- * [In reply to Federica Di Lauro]                    \
- * questo è quello di otto, non ricordo cosa venisse \
- *fuori per l'esercizio di matlab                     \
- **/
+// https://www.cmrr.umn.edu/~strupp/serial.html
+// https://github.com/banetl/sensor_reading/blob/master/cpp/sensor_reading.cc
+
+#define OTTO_BASELINE 0.435  // Presa dalla piattaforma OTTO
+
+#define OTTO_PORT "/dev/ttyUSB0"
+#define OTTO_COMMS_SPEED B115200
 
 #include <fcntl.h>
+#include <pb_decode.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
 
-#include "deps/nanopb-0.4.4/pb_decode.h"
-#include "deps/nanopb-0.4.4/pb_encode.h"
+#include "otto_communication/otto_communication.pb.h"
 
-#ifdef ENABLE_AOTTO
+// TODO Doxygen for AOtto_InitSerialComms()
+// XXX Move to h_otto.c?
+static inline int AOtto_InitSerialComms(void) {
+    int fd;
+    struct termios tty;
+    // Open the port
+    fd = open(OTTO_PORT, O_RDONLY | O_NOCTTY | O_SYNC);
+    if (fd < 0) {
+        perror("AOtto_InitSerialComms");
+        exit(EXIT_FAILURE);
+    }
+    /*
+    // Require exclusive access
+    if (ioctl(fd, TIOCEXCL, NULL) < 0) {
+        ... error handling...
+    }
+    */
+    // Get the port's current configuration
+    if (tcgetattr(fd, &tty) < 0) {
+        perror("AOtto_InitSerialComms: tcgetattr");
+        exit(EXIT_FAILURE);
+    }
 
-// https://github.com/banetl/sensor_reading/blob/master/cpp/sensor_reading.cc
-int AOtto_InitSerialComms(const char* port, int baud, int timeout) {
-    int fd = open(port, O_RDWR | O_NOCTTY | O_SYNC);
-    struct termios settings;
-    speed_t baudrate = baud;
+    // IFLAGS -- Turn off input processing
+    tty.c_iflag &= ~(BRKINT | ICRNL | INLCR | PARMRK | INPCK | ISTRIP | IXON);
+    tty.c_iflag |= IGNBRK | ISTRIP;
 
-    tcgetattr(fd, &settings);
-    cfsetispeed(&settings, baudrate);
-
-    settings.c_cflag &= ~PARENB; /* no parity */
-    settings.c_cflag &= ~CSTOPB; /* 1 stop bit */
-    settings.c_cflag &= ~CSIZE;
-    settings.c_cflag |= CS8 | CLOCAL; /* 8 bits */
-    /* echo off, echo newline off, canonical mode off,
-     * extended input processing off, signal chars off
+    /* OFLAGS -- Turn off output processing
+     * Equates to:
+     * tty.c_oflag &= ~(OCRNL | ONLCR | ONLRET |
+     *                     ONOCR | ONOEOT| OFILL | OLCUC | OPOST);
      */
-    settings.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | ISIG);
-    settings.c_oflag = 0; /* Turn off output processing */
-    settings.c_cflag &= ~CRTSCTS;
-    /* Read settings :
-     * To understand the settings have a look at man 3 termios
-     * ``Canonical and noncanonical mode`` section
-     */
-    settings.c_cc[VMIN] = 1;             /* read doesn't block */
-    settings.c_cc[VTIME] = timeout * 10; /* read timeout in ds */
-    settings.c_cflag |= CREAD;
+    tty.c_oflag = 0;
 
-    /* Flush Port, then applies attributes */
-    tcflush(fd, TCIFLUSH);
-    if (tcsetattr(fd, TCSANOW, &settings) < 0) /* apply the settings */
-        return -1;
+    // LFLAGS -- Turn off canonical mode and line processing
+    tty.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | ISIG);
+
+    // CFLAGS -- Turn off character processing and set input width to 8 bit
+    tty.c_cflag &= ~(CSIZE | PARENB);
+    tty.c_cflag |= CS8;
+
+    // CC -- Read parameters
+    tty.c_cc[VMIN] = 20; // Number of chars to before read() can return
+    tty.c_cc[VTIME] = 0; // Delay between chars
+
+    // Set the port's speed
+    if (cfsetispeed(&tty, OTTO_COMMS_SPEED) < 0 ||
+        cfsetospeed(&tty, OTTO_COMMS_SPEED) < 0) {
+        perror("AOtto_InitSerialComms: cfsetispeed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Set the port's config
+    if (tcsetattr(fd, TCSAFLUSH, &tty) < 0) {
+        perror("AOtto_InitSerialComms: tcsetattr");
+        exit(EXIT_FAILURE);
+    }
 
     return fd;
 }
 
-void* AOtto_RecvMsg() {
-    char* port = "/dev/ttyUSB1000";
-    int baud = 9600;
-    int timeout = 0;
-    int fd = open_port(port, baud, timeout);
-    if (fd == -1) {
-        perror("A_Otto_RecvMsg():");
-        exit(EXIT_FAILURE);
-    }
-}
-
-#endif
+void AOtto_ReadDeserialize(int fd, pb_byte_t* buf, StatusMessage msg);
 
 #endif  // A_OTTO_H
