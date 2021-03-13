@@ -1,5 +1,5 @@
 ### Dependencies ###
-/src/deps/nanopb-0.4.4
+/src/otto_communication
 
 ### Doxygen ###
 /html

@@ -3,11 +3,11 @@
 CC = gcc
 LD = gcc
 
-BFLAGS = -O0 -ggdb #-O3
+BFLAGS = -O3 # -O0 -ggdb #-O3
 CFLAGS = -I. -std=gnu99 -Wall -Wextra -pedantic
-WITH = -pthread -lrt -lm
+WITH = -pthread -lrt -lm -l:libprotobuf-nanopb.a
 
-MODULES   := src # deps
+MODULES   := otto_communication src # deps
 SRC_DIR   := $(addprefix ./,$(MODULES))
 BUILD_DIR := $(addprefix .build/,$(MODULES))
 
@@ -22,7 +22,7 @@ $1/%.o: %.c
 	$(CC) $(BFLAGS) $(CFLAGS) $(INCLUDES) -c $$< -o $$@
 endef
 
-.PHONY: all checkdirs clean docs
+.PHONY: all checkdirs clean docs protobuf
 
 all: checkdirs docs rt-app.x86_64
 
@@ -39,5 +39,8 @@ clean:
 
 docs:
 	@doxygen
+
+protobuf:
+	@nanopb_generator.py -q otto_communication/otto_communication.proto
 
 $(foreach bdir,$(BUILD_DIR),$(eval $(call make-goal,$(bdir))))

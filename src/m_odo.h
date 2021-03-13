@@ -13,6 +13,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "a_otto.h"
+#define USE_BASELINE OTTO_BASELINE
+
 #include "h_sched.h"
 #include "h_time.h"
 
@@ -20,8 +23,7 @@
  * @brief A datatype representing an arc
  *
  */
-typedef double arc_t;  // TODO arc, what is this? A: An arc is a value in
-                       // meters (centimeters?)
+typedef double arc_t;  // TODO formal definition of "arc" in doxygen comment
 
 /** @struct pose
  *  @brief A structure representing a pose, and the building block for the
