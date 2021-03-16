@@ -125,9 +125,9 @@ void AOtto_ReadDeserialize(int fd, StatusMessage* msg) {
         msg->delta_millis = 0;
         msg->linear_velocity = 0;
         msg->status = OTTO_UNKNOWN_ERROR;
-#ifdef CONFIG_PRINT_ERRORS
-        printf("AOtto_ReadDeserialize: %s\n", PB_GET_ERROR(&stream));
-#endif  // CONFIG_PRINT_ERRORS
+#if CONFIG_ENABLE_LOGGING
+        syslog(LOG_ERR, "%s%s", "(A_OTTO) NanoPB: ", PB_GET_ERROR(&stream));
+#endif  // CONFIG_ENABLE_LOGGING
     }
     return;
 }

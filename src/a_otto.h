@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #include "config.h"
 #include "otto_communication/otto_communication.pb.h"

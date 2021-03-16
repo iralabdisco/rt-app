@@ -1,7 +1,7 @@
 #ifndef M_ODO_H
 #define M_ODO_H
 
-#include "config.h"
+
 
 #include <assert.h>
 #include <math.h>
@@ -11,11 +11,17 @@
 #include <stdlib.h>
 #include <syslog.h>
 
-#include "a_otto.h"
-#define USE_BASELINE OTTO_BASELINE
+#include "config.h"
 
+#include "a_otto.h"
 #include "h_sched.h"
 #include "h_time.h"
+
+#define USE_BASELINE OTTO_BASELINE
+#define ODO_RUNTIME 10 * NSEC_PER_MSEC
+#define ODO_PERIOD 20 * NSEC_PER_MSEC
+#define ODO_DEADLINE 11 * NSEC_PER_MSEC
+#define ODO_DELTA_WARN_THRESHOLD 500 * USEC_PER_MSEC
 
 /**
  * @brief A datatype representing an arc
