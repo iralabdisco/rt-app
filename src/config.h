@@ -1,0 +1,10 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define CONFIG_CUT_SHORT 1
+#define CONFIG_PRINT_ERRORS 1
+#define CONFIG_PRINT_MSG_VALUES 1
+
+#define CONFIG_MAX_ITERS 100
+
+#endif  // CONFIG_H

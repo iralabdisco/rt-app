@@ -1,6 +1,8 @@
 #ifndef H_SCHED_H
 #define H_SCHED_H
 
+#include "config.h"
+
 #include <linux/sched.h>
 #include <pthread.h>
 #include <sched.h>
@@ -33,6 +35,7 @@ struct sched_attr {
  * @param pid The PID of the process whose parameters are going to be modified
  * @param attr A pointer to a sched_attr structure used to specify attributes
  * @param flags ???
+ *
  * @return On success, 0; on failure -1. The error code is stored in errno
  */
 static inline int sched_setattr(

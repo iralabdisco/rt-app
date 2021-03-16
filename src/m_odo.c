@@ -1,68 +1,13 @@
 #include "m_odo.h"
 
-#ifdef DBG_TEST_TRACE
-/**
- * @brief Print a trace of what the worker is doing. \b DANGER! It uses
- * #printf() which is not RT-safe.
- *
- * @param pb A pointer to the #posebuffer to debug
- * @param itercount A pointer to a variable holding a count of total
- * iterations
- * @param errcount A pointer to a variable holding a count of the times the
- * clock mislabeled a pose
- */
-void MOdometry_PrintTestTrace(posebuf_t* pb, int* itercount, int* errcount) {
-    printf("\n");
-    pose_t* cur;
-    double elapsed;
-    if (pb->old == &pb->a) {
-        printf("Current pose: B\n");
-        cur = &pb->b;
-    } else {
-        printf("Current pose: A\n");
-        cur = &pb->a;
-    }
-    printf(
-        "Timestamp:\t\t%llu\n"
-        "Values:\tX:\t\t%f\n"
-        "\tY:\t\t%f\n"
-        "\tAlpha:\t\t%f\n",
-        cur->ts, cur->x, cur->y, cur->th);
-    if (pb->old->ts != 0) {
-        elapsed = cur->ts - pb->old->ts;
-        printf("Elapsed (ns): %.0f", elapsed);
-        if (elapsed < 0) {
-            printf("\tCLOCK MISS!");
-            (*errcount)++;
-        }
-    }
-    if (cur->next != pb->old)
-        printf("\n-- ERROR --\n Pointer swap inconsistent.\n");
-    (*itercount)++;
-    printf("\nIter:\tTotal: %d\n\tErrors: %d\n\tRate: %g%%\n", *itercount,
-           *errcount, (*errcount) / (*itercount) * 100.0);
-    if (*itercount == 10) {
-        printf(
-            "\n-- DEBUG --\nTest trace termination after 10 iterations.\n"
-            "Exiting.\n");
-        exit(0);
-    }
-}
-#endif
-
-void MOdo_PrintStatsCold(const odoStats_t* stats) {
-    printf("Statistics (cold):\nIterations:\t%d\nClock Errors:\t%d\n",
-           stats->totalIterations, stats->clockMisses);
-    return;
-}
-
 /**
  * @brief Initialize a posebuffer, setting the poses as 0,0,0,0 and the
- * discardable pose to a. Note that the poses make an implicit ringbuffer.
+ * discardable pose to a. Note that the poses are arranged into an implicit
+ * ringbuffer.
  *
  * @param pb A pointer to the posebuffer to be initialized
  */
-void MOdo_initPoseBuffer(posebuf_t* pb) {
+void MOdo_InitPoseBuffer(posebuf_t* pb) {
     pb->old = &pb->a;
     pb->a = (pose_t){.ts = 0, .x = 0, .y = 0, .th = 0, .next = &pb->b};
     pb->b = (pose_t){.ts = 0, .x = 0, .y = 0, .th = 0, .next = &pb->a};
@@ -74,11 +19,14 @@ void MOdo_initPoseBuffer(posebuf_t* pb) {
  *
  * @param sig The number of the received signal.
  */
-void deadline_miss_handler(int sig) {
-    printf("MOdo_EntryPoint: Deadline miss detected (0x%4x)\n", sig);
+void MOdo_DLMissHandler(int sig) {
+    assert(sig != 0);  // Ensure signature is not null (I admit
+    // doing this only to remove a compile-time warning)
+    // https://bytefreaks.net/programming-2/cc-comparing-the-performance-of-syslog-vs-printf
+    syslog(LOG_WARNING, "%s", "MOdo_EntryPoint: Deadline miss detected");
     // TODO recovery, what to do when a deadline is missed? At the moment,
     // we're launching the default handler
-    (void)signal(SIGXCPU, SIG_DFL);
+    //(void)signal(SIGXCPU, SIG_DFL);
 }
 
 /**
@@ -99,38 +47,42 @@ void* MOdo_EntryPoint(void* args) {
                               .sched_runtime = 10 * 1000 * 1000,    // 10ms
                               .sched_period = 20 * 1000 * 1000,     // 20ms
                               .sched_deadline = 11 * 1000 * 1000};  // 11ms
-    (void)signal(SIGXCPU, deadline_miss_handler);  // Register signal handler
+    (void)signal(SIGXCPU, MOdo_DLMissHandler);  // Register signal handler
     if (sched_setattr(0, &attr, 0)) {
+#ifdef CONFIG_PRINT_ERRORS
         perror("MOdo_EntryPoint: sched_setattr");
+#endif  // CONFIG_PRINT_ERRORS
         exit(EXIT_FAILURE);
     }
     // BEGIN Worker variables
-    arc_t sx = 0;  // TODO Encoder, implement protobuf adapter
+    arc_t sx = 0;
     arc_t dx = 0;
     posebuf_t pb;
     double b = USE_BASELINE;
-    odoStats_t stats = {.targetIterations = MAX_ITERS,
+#ifdef CONFIG_CUT_SHORT
+    odoStats_t stats = {.targetIterations = CONFIG_MAX_ITERS,
                         .totalIterations = 0,
                         .clockMisses = 0};
+#endif  // CONFIG_CUT_SHORT
     struct timespec gts;
     int ottoCharDeviceFd;
-    pb_byte_t buf[128];
     StatusMessage msg = StatusMessage_init_zero;
     // END Worker variables
-    ottoCharDeviceFd = AOtto_InitSerialComms();
-    MOdo_initPoseBuffer(&pb);
+    ottoCharDeviceFd = AOtto_Init();
+    MOdo_InitPoseBuffer(&pb);
     HTime_InitBase();  // XXX see h_time.h
     for (;;) {
         // BEGIN Worker code
-        AOtto_ReadDeserialize(ottoCharDeviceFd, buf, msg);
-        // printf("A:%f,L:%f,T:%d,S:%d\n", msg.angular_velocity,
-        //       msg.linear_velocity, msg.delta_millis, msg.status);
+        AOtto_ReadDeserialize(ottoCharDeviceFd, &msg);
+#ifdef CONFIG_PRINT_MSG_VALUES
+        printf("A:%f,L:%f,T:%d,S:%d\n", msg.angular_velocity,
+               msg.linear_velocity, msg.delta_millis, msg.status);
+#endif  // CONFIG_PRINT_MSG_VALUES
         pose_t* cur =
             pb.old;  // Select the pose to work on in the current iteration
         pb.old = pb.old->next;  // And mark the other one as disposable
         arc_t delta = sx - dx;
         cur->ts = HTime_GetNsDelta(&gts);
-        // printf("%llu,", cur->ts); // Allow for delta logging
         // TODO proofread & static test
         if (delta == 0) {  // We are going forward
             cur->x = pb.old->x + cos(pb.old->th) * delta;
@@ -148,15 +100,12 @@ void* MOdo_EntryPoint(void* args) {
             cur->th = pb.old->th - delta / b;
         }
         stats.totalIterations++;
-        if ((pb.old->ts != 0) && (cur->ts - pb.old->ts < 0))
-            stats.clockMisses++;
-#ifdef CUT_SHORT
+#ifdef CONFIG_CUT_SHORT
         if (stats.totalIterations == stats.targetIterations) break;
 #endif
         // END Worker code
         sched_yield();
     };
-    MOdo_PrintStatsCold(&stats);
     pthread_exit(EXIT_SUCCESS);
     return (NULL);
 }

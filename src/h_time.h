@@ -3,6 +3,8 @@
 
 #include <time.h>
 
+#include "config.h"
+
 // XXX Importante, vedi http://projects.ira.disco.unimib.it/issues/1123
 // - Risoluzione Apparente (ad es. ms) vs. Risoluzione Effettiva (ad es. 55ms
 // DOS)
@@ -25,34 +27,56 @@
 #define FSEC_PER_SEC 1000000000000000L
 
 typedef struct timespec timespec_t;
-typedef long long int nsec_t;
+typedef unsigned long long int nsec_t;  // 2^64, so it should keep about...
 
 static nsec_t _timebase;  // TODO The implementation of timebase is yanky...
                           // it could use a refactor, as I'd like to
                           // initialize it just before launching the threads
 
-/** @brief Convert timespec to nanoseconds
- *  @param ts pointer to the timespec variable to be converted
+/** @brief Convert timespec to nanoseconds.
+ *  @param ts A pointer to the timespec variable to be converted.
  *
- *  Returns the scalar nanosecond representation of the timespec
- *  parameter.
+ *  @return The scalar nanosecond representation of the timespec parameter.
  */
 static inline nsec_t HTime_TsToNs(const timespec_t* ts) {
     return ((nsec_t)ts->tv_sec * NSEC_PER_SEC) + ts->tv_nsec;
 }
 
+/**
+ * @brief Get the time from the clock specified by USE_CLOCK in nanoseconds.
+ *
+ * @param ts A pointer to the timespec structure where to store the
+ * intermediate result.
+ *
+ * @return The scalar nanosecond representation of the timespec
+ * parameter.
+ */
 static inline nsec_t HTime_GetNs(timespec_t* ts) {
     if (clock_gettime(USE_CLOCK, ts) == -1) {
+#ifdef CONFIG_PRINT_ERRORS
         perror("HTime_GetNs:");
+#endif  // CONFIG_PRINT_ERRORS
         exit(EXIT_FAILURE);
     }
     return HTime_TsToNs(ts);
 }
 
+/**
+ * @brief Get the difference between the global timebase and a specific
+ * timespec.
+ *
+ * @param ts The timespec of which to check the delta.
+ * @return The difference between the timespec and the global timebase in
+ * nanoseconds.
+ */
 static inline nsec_t HTime_GetNsDelta(timespec_t* ts) {
     return HTime_GetNs(ts) - _timebase;
 }
 
+/**
+ * @brief Initialize the global timebase, a global variable that records the
+ * time at which the application was started in nanoseconds.
+ */
 static inline void HTime_InitBase(void) {
     timespec_t ts;
     _timebase = HTime_GetNs(&ts);

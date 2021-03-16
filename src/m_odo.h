@@ -1,10 +1,7 @@
 #ifndef M_ODO_H
 #define M_ODO_H
 
-// #define DBG_TEST_TRACE
-#define CUT_SHORT
-
-#define MAX_ITERS 100
+#include "config.h"
 
 #include <assert.h>
 #include <math.h>
@@ -12,6 +9,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <syslog.h>
 
 #include "a_otto.h"
 #define USE_BASELINE OTTO_BASELINE
