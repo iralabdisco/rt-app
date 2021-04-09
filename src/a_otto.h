@@ -5,11 +5,13 @@
 #include <pb_decode.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <syslog.h>
 #include <termios.h>
 #include <unistd.h>
-#include <syslog.h>
 
 #include "config.h"
+// TODO change message format to include arc_l/arc_r instead of
+// linear/angular velocities
 #include "otto_communication/otto_communication.pb.h"
 
 // https://www.cmrr.umn.edu/~strupp/serial.html
@@ -27,6 +29,7 @@
 // The following defines were taken from Otto's code
 // TODO Fix Doxygen comments
 
+// TODO Configuration packet to OTTO
 #define OTTO_BASELINE 0.435 /** @brief The baseline. Refer to otto */
 
 #define OTTO_UNKNOWN 0

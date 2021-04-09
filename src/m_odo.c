@@ -80,7 +80,7 @@ void* MOdo_EntryPoint(void* args) {
     HTime_InitBase();  // XXX see h_time.h
     for (;;) {
         // BEGIN Worker code
-        AOtto_ReadDeserialize(ottoCharDeviceFd, &msg);
+        AOtto_ReadDeserialize(ottoCharDeviceFd, &msg); // Calc prima e dopo
 #if CONFIG_PRINT_MSG_VALUES
         printf("A:%f,L:%f,T:%d,S:%d\n", msg.angular_velocity,
                msg.linear_velocity, msg.delta_millis, msg.status);

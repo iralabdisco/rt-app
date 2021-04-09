@@ -1,8 +1,6 @@
 #ifndef M_ODO_H
 #define M_ODO_H
 
-
-
 #include <assert.h>
 #include <math.h>
 #include <memory.h>
@@ -11,9 +9,8 @@
 #include <stdlib.h>
 #include <syslog.h>
 
-#include "config.h"
-
 #include "a_otto.h"
+#include "config.h"
 #include "h_sched.h"
 #include "h_time.h"
 
@@ -25,7 +22,9 @@
 
 /**
  * @brief A datatype representing an arc
- *
+ * lo spostamento nello spazio del punto di contatto (in metri, letteralmente
+ * l'arco di circ. (centrata in CIR) tra il punto di contatto al tempo t-1 e
+ * il punto di contatto al tempo t. Se andiamo dritti il raggio è infinito)
  */
 typedef double arc_t;  // TODO formal definition of "arc" in doxygen comment
 
@@ -43,9 +42,9 @@ typedef double arc_t;  // TODO formal definition of "arc" in doxygen comment
  *  @var pose::ts
  *  The timestamp at which the pose was created
  *  @var pose::x
- *  The current position on the \c x axis
+ *  The current position on the `x` axis
  *  @var pose::y
- *  The current position on the \c y axis
+ *  The current position on the `y` axis
  *  @var pose::th
  *  The angle (Theta) of attack in degrees
  *  @var pose::next
