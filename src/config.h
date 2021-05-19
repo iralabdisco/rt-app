@@ -9,7 +9,7 @@
 #define CONFIG_MAX_ITERS 100
 
 #define CONFIG_PRINT_ERRORS 1
-#define CONFIG_PRINT_MSG_VALUES 0
+#define CONFIG_PRINT_MSG_VALUES 1
 
 /**
  * @brief Enable logging via `syslog()` (see `man syslog(3)` for details).

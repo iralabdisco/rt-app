@@ -1,10 +1,13 @@
 #ifndef A_OTTO_H
 #define A_OTTO_H
 
+#include <assert.h>
 #include <fcntl.h>
 #include <pb_decode.h>
+#include <pb_encode.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
 #include <syslog.h>
 #include <termios.h>
 #include <unistd.h>
@@ -24,7 +27,7 @@
 /** @brief The speed at which the computer and the UART communicate.
  * \n \b IMPORTANT make sure it's the same as the mobile platform's before
  * compiling. */
-#define OTTO_COMMS_SPEED B115200
+#define OTTO_COMMS_SPEED B9600
 
 // The following defines were taken from Otto's code
 // TODO Fix Doxygen comments
@@ -41,6 +44,11 @@
 #define OTTO_UNKNOWN_ERROR 6
 
 int AOtto_Init(void);
-void AOtto_ReadDeserialize(int fd, StatusMessage* msg);
+int AOtto_Read(int fd, int bytes, pb_byte_t* buf);
+void AOtto_Deserialize(pb_byte_t* buf, int bytes, StatusMessage* msg);
+
+void AOtto_SerializeWrite(int fd, VelocityCommand cmd);
+
+#define OTTO_COMMAND_SAMPLES 10
 
 #endif  // A_OTTO_H

@@ -74,17 +74,48 @@ void* MOdo_EntryPoint(void* args) {
     int ottoCharDeviceFd;
     int lastDelta = 0;
     StatusMessage msg = StatusMessage_init_zero;
+    int commandSample = 0;
+    VelocityCommand cmd = VelocityCommand_init_zero;
+    pb_byte_t recvBuf[20], tmpBuf[20];
+    int bytesRead = 0, bytesReadTotal = 0, lastBytesRead = 0, bytesMissing;
+    VelocityCommand commandBuffer[OTTO_COMMAND_SAMPLES] = {
+        {0, 0}, {10, 0}, {10, 0}, {10, 0}, {1, 0},
+        {1, 0}, {1, 0},  {1, 0},  {0, 0},  {0, 0}};
     // END Worker variables
     ottoCharDeviceFd = AOtto_Init();
     MOdo_InitPoseBuffer(&pb);
     HTime_InitBase();  // XXX see h_time.h
+    for (int i = 0; i < 100; i++) {
+        //printf("Spamming...\n");
+        AOtto_SerializeWrite(ottoCharDeviceFd, commandBuffer[0]);
+    }
     for (;;) {
         // BEGIN Worker code
-        AOtto_ReadDeserialize(ottoCharDeviceFd, &msg); // Calc prima e dopo
+        bytesMissing = 20 - bytesRead;
+        bytesRead = AOtto_Read(ottoCharDeviceFd, bytesMissing, recvBuf);
+        bytesReadTotal += bytesRead;
+        printf("Read: %i (%i tot)\n", bytesRead, bytesReadTotal);
+        if (bytesRead < 20) {
+            for (int i = 0; i < bytesRead; i++) {
+                tmpBuf[lastBytesRead + i] = recvBuf[i];
+                printf("adding byte %2x\n", recvBuf[i]);
+            }
+            lastBytesRead += bytesRead;
+        }
+        if (bytesReadTotal == 20) {
+            if (lastBytesRead) {
+                AOtto_Deserialize(tmpBuf, 20, &msg);
+            } else {
+                AOtto_Deserialize(recvBuf, 20, &msg);
+            }
 #if CONFIG_PRINT_MSG_VALUES
-        printf("A:%f,L:%f,T:%d,S:%d\n", msg.angular_velocity,
-               msg.linear_velocity, msg.delta_millis, msg.status);
+            printf("A:%f,L:%f,T:%d,S:%d\n", msg.angular_velocity,
+                   msg.linear_velocity, msg.delta_millis, msg.status);
 #endif  // CONFIG_PRINT_MSG_VALUES
+            bytesReadTotal = 0;
+            lastBytesRead = 0;
+        }
+
         // XXX linear_velocity => sx/dx???
         cur = pb.old;  // Select the pose to work on in the current iteration
         pb.old = pb.old->next;  // And mark the other one as disposable
@@ -119,8 +150,16 @@ void* MOdo_EntryPoint(void* args) {
         }
 #if CONFIG_CUT_SHORT
         stats.totalIterations++;
-        if (stats.totalIterations == stats.targetIterations) break;
+        if (stats.totalIterations == stats.targetIterations) {
+            printf("HUP!\n");
+            break;
+        }
 #endif
+        if (0) {  //(commandSample < OTTO_COMMAND_SAMPLES) {
+            cmd = commandBuffer[commandSample];
+            AOtto_SerializeWrite(ottoCharDeviceFd, cmd);
+            commandSample++;
+        }
         // END Worker code
         sched_yield();
     };

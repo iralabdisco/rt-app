@@ -27,7 +27,7 @@ int AOtto_Init(void) {
     int fd;
     struct termios tty;
     // Open the port
-    fd = open(OTTO_PORT, O_RDONLY | O_NOCTTY | O_SYNC);
+    fd = open(OTTO_PORT, O_RDWR | O_NOCTTY | O_SYNC);
     if (fd < 0) {
 #ifdef CONFIG_PRINT_ERRORS
         perror("AOtto_Init");
@@ -48,27 +48,29 @@ int AOtto_Init(void) {
         exit(EXIT_FAILURE);
     }
 
-    // IFLAGS -- Turn off input processing
-    tty.c_iflag &= ~(BRKINT | ICRNL | INLCR | PARMRK | INPCK | ISTRIP | IXON);
-    tty.c_iflag |= IGNBRK | ISTRIP;
-
     /* OFLAGS -- Turn off output processing
      * Equates to:
      * tty.c_oflag &= ~(OCRNL | ONLCR | ONLRET |
      *                     ONOCR | ONOEOT| OFILL | OLCUC | OPOST);
      */
-    tty.c_oflag = 0;
+    tty.c_oflag &= ~(OCRNL | ONLCR | ONLRET | ONOCR | OFILL | OLCUC | OPOST);
 
     // LFLAGS -- Turn off canonical mode and line processing
-    tty.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | ISIG);
+    tty.c_lflag = 0;
+
+    // IFLAGS -- Turn off input processing
+    tty.c_iflag &= ~(IGNBRK | ISTRIP | IGNCR | BRKINT | ICRNL | INLCR |
+                     PARMRK | INPCK | ISTRIP | IXON | IXOFF | IXANY);
+    // tty.c_iflag |= IGNBRK | ISTRIP;
 
     // CFLAGS -- Turn off character processing and set input width to 8 bit
-    tty.c_cflag &= ~(CSIZE | PARENB);
-    tty.c_cflag |= CS8;
+    tty.c_cflag &= ~(CSIZE | PARENB | CSTOPB);
+    tty.c_cflag |= (CS8 | CRTSCTS | CLOCAL);
 
     // CC -- Read parameters
-    tty.c_cc[VMIN] = 20;  // Number of chars to before read() can return
-    tty.c_cc[VTIME] = 0;  // Delay between chars
+    tty.c_cc[VMIN] =
+        0;  // Number of bytes before read() and write() can return
+    tty.c_cc[VTIME] = 0;  // Timeout or delay
 
     // Set the port's speed
     if (cfsetispeed(&tty, OTTO_COMMS_SPEED) < 0 ||
@@ -86,6 +88,14 @@ int AOtto_Init(void) {
 #endif  // CONFIG_PRINT_ERRORS
         exit(EXIT_FAILURE);
     }
+
+    // Reset the STM via DTR
+    ioctl(fd, TIOCMBIC, TIOCM_DTR);
+    sleep(1);
+    ioctl(fd, TIOCMBIS, TIOCM_DTR);
+
+    sleep(2);  // wait for serial port to become ready
+
     return fd;
 }
 
@@ -105,9 +115,8 @@ int AOtto_Init(void) {
  * decoded correctly. If that happens, clear the StatusMessage struct and set
  * the StatusMessage::status field to OTTO_UNKNOWN_ERROR and return.
  */
-void AOtto_ReadDeserialize(int fd, StatusMessage* msg) {
-    static pb_byte_t buf[128];
-    int res = read(fd, buf, 128);
+int AOtto_Read(int fd, int bytes, pb_byte_t* buf) {
+    int res = read(fd, buf, bytes);
     if (res < 0) {
         // TODO recovery, the system might stop responding and we need
         // some fallback logic
@@ -116,9 +125,11 @@ void AOtto_ReadDeserialize(int fd, StatusMessage* msg) {
 #endif  // CONFIG_PRINT_ERRORS
         exit(EXIT_FAILURE);
     }
-    buf[res] = 0;
+    return res;
+}
 
-    pb_istream_t stream = pb_istream_from_buffer(buf, 20);
+void AOtto_Deserialize(pb_byte_t* buf, int bytes, StatusMessage* msg) {
+    pb_istream_t stream = pb_istream_from_buffer(buf, bytes);
 
     if (!pb_decode(&stream, StatusMessage_fields, msg)) {
         msg->angular_velocity = 0;
@@ -126,8 +137,33 @@ void AOtto_ReadDeserialize(int fd, StatusMessage* msg) {
         msg->linear_velocity = 0;
         msg->status = OTTO_UNKNOWN_ERROR;
 #if CONFIG_ENABLE_LOGGING
-        syslog(LOG_ERR, "%s%s", "(A_OTTO) NanoPB: ", PB_GET_ERROR(&stream));
+        syslog(LOG_ERR, "%s%s",
+               "(A_OTTO_IN) NanoPB: ", PB_GET_ERROR(&stream));
 #endif  // CONFIG_ENABLE_LOGGING
     }
     return;
+}
+
+void AOtto_SerializeWrite(int fd, VelocityCommand cmd) {
+    static pb_byte_t buf[10];
+    pb_ostream_t stream = pb_ostream_from_buffer(buf, sizeof(buf));
+    if (!pb_encode(&stream, VelocityCommand_fields, &cmd)) {
+#if CONFIG_ENABLE_LOGGING
+        syslog(LOG_ERR, "%s%s",
+               "(A_OTTO_OUT) NanoPB: ", PB_GET_ERROR(&stream));
+#endif  // CONFIG_ENABLE_LOGGING
+    }
+    int res = 0;
+    while (res < 10) {
+        res = write(fd, buf, stream.bytes_written);
+    }
+    if (res < 0) {
+        // TODO recovery, the system might stop responding and we need
+        // some fallback logic
+#ifdef CONFIG_PRINT_ERRORS
+        perror("AOtto_SerializeWrite");
+#endif  // CONFIG_PRINT_ERRORS
+        exit(EXIT_FAILURE);
+    }
+    printf("W_OK %i\n", res);
 }
