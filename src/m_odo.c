@@ -1,9 +1,19 @@
+/**
+ * @file m_odo.c
+ * @author Jacopo Maltagliati (j.maltagliati@campus.unimib.it)
+ * @brief The source of the Odometry thread worker.
+ *
+ * @copyright This file is part of a project released under the European Union
+ * Public License, see LICENSE and LICENSE.it for details.
+ *
+ */
+
 #include "m_odo.h"
 
 /**
  * @brief Initialize a posebuffer, clearing the poses' contents and setting
- * the discardable pose to `a`. Note that the poses are arranged into an
- * implicit ringbuffer structure.
+ * the discardable pose to posebuf_t::a. Note that the poses are implicitly
+ * arranged as a ringbuffer.
  *
  * @param pb A pointer to the posebuffer to be initialized.
  */
@@ -35,11 +45,11 @@ void MOdo_DLMissHandler(int sig) {
  *
  * @param args A pointer to a memory area representing arguments. By default,
  * `NULL` is passed: this parameter is mostly useful if you have a thread
- * pool, see https://computing.llnl.gov/tutorials/pthreads/.
+ * pool or a worker that needs some specific parameters.
+ * @see https://computing.llnl.gov/tutorials/pthreads/
  *
  * @return In our case, nothing is returned, but having the function signature
- * return `void*` lets the programmer return arbitrary data from the thread,
- * albeit dangerously.
+ * return `void*` lets the programmer return arbitrary data from the thread.
  */
 void* MOdo_EntryPoint(void* args) {
     assert(args ==
@@ -59,40 +69,45 @@ void* MOdo_EntryPoint(void* args) {
         exit(EXIT_FAILURE);
     }
     // BEGIN Worker variables
+    struct timespec gts; /** @brief A struct used for timing calculations */
+    int ottoSerialFd;    /** @brief The file descriptor pointing to the serial
+                          * adapter connected to Otto */
+    StatusMessage msg = StatusMessage_init_zero;
+    VelocityCommand cmd = VelocityCommand_init_zero;
+    // Serial shenanigans
+    pb_byte_t recvBuf[20], tmpBuf[20];
+    int bytesRead = 0, bytesReadTotal = 0, lastBytesRead = 0, bytesMissing;
+    // TODO: rework commandSample/commandBuffer
+    int commandSample = 0;
+    VelocityCommand commandBuffer[OTTO_COMMAND_SAMPLES] = {
+        {0, 0}, {10, 0}, {10, 0}, {10, 0}, {1, 0},
+        {1, 0}, {1, 0},  {1, 0},  {0, 0},  {0, 0}};
+    // Odometry stuff
     arc_t sx = 0;
     arc_t dx = 0;
     pose_t* cur;
     arc_t delta;
+    int lastDelta = 0;
     posebuf_t pb;
     double b = USE_BASELINE;
 #if CONFIG_CUT_SHORT
+    // TODO remove/rework CUT_SHORT
     odoStats_t stats = {.targetIterations = CONFIG_MAX_ITERS,
                         .totalIterations = 0,
                         .clockMisses = 0};
 #endif  // CONFIG_CUT_SHORT
-    struct timespec gts;
-    int ottoCharDeviceFd;
-    int lastDelta = 0;
-    StatusMessage msg = StatusMessage_init_zero;
-    int commandSample = 0;
-    VelocityCommand cmd = VelocityCommand_init_zero;
-    pb_byte_t recvBuf[20], tmpBuf[20];
-    int bytesRead = 0, bytesReadTotal = 0, lastBytesRead = 0, bytesMissing;
-    VelocityCommand commandBuffer[OTTO_COMMAND_SAMPLES] = {
-        {0, 0}, {10, 0}, {10, 0}, {10, 0}, {1, 0},
-        {1, 0}, {1, 0},  {1, 0},  {0, 0},  {0, 0}};
     // END Worker variables
-    ottoCharDeviceFd = AOtto_Init();
+    ottoSerialFd = AOtto_Init();
     MOdo_InitPoseBuffer(&pb);
     HTime_InitBase();  // XXX see h_time.h
     for (int i = 0; i < 100; i++) {
-        //printf("Spamming...\n");
-        AOtto_SerializeWrite(ottoCharDeviceFd, commandBuffer[0]);
+        // printf("Spamming...\n");
+        AOtto_SerializeWrite(ottoSerialFd, commandBuffer[0]);
     }
     for (;;) {
         // BEGIN Worker code
         bytesMissing = 20 - bytesRead;
-        bytesRead = AOtto_Read(ottoCharDeviceFd, bytesMissing, recvBuf);
+        bytesRead = AOtto_Read(ottoSerialFd, bytesMissing, recvBuf);
         bytesReadTotal += bytesRead;
         printf("Read: %i (%i tot)\n", bytesRead, bytesReadTotal);
         if (bytesRead < 20) {
@@ -157,7 +172,7 @@ void* MOdo_EntryPoint(void* args) {
 #endif
         if (0) {  //(commandSample < OTTO_COMMAND_SAMPLES) {
             cmd = commandBuffer[commandSample];
-            AOtto_SerializeWrite(ottoCharDeviceFd, cmd);
+            AOtto_SerializeWrite(ottoSerialFd, cmd);
             commandSample++;
         }
         // END Worker code

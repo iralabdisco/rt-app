@@ -1,7 +1,15 @@
+/**
+ * @file h_sched.h
+ * @author Jacopo Maltagliati (j.maltagliati@campus.unimib.it)
+ * @brief An helper header containing various scheduling-related structures.
+ *
+ * @copyright This file is part of a project released under the European Union
+ * Public License, see LICENSE and LICENSE.it for details.
+ *
+ */
+
 #ifndef H_SCHED_H
 #define H_SCHED_H
-
-#include "config.h"
 
 #include <linux/sched.h>
 #include <pthread.h>
@@ -12,10 +20,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "config.h"
+
 /**
  * @brief Struct used by the task to communicate parameters to the scheduler
- * https://man7.org/linux/man-pages/man2/sched_getattr.2.html
- * https://www.i-programmer.info/programming/cc/13002-applying-c-deadline-scheduling.html?start=1
+ * @see https://man7.org/linux/man-pages/man2/sched_getattr.2.html
+ * @see https://www.i-programmer.info/programming/cc/13002-applying-c-deadline-scheduling.html?start=1
  */
 struct sched_attr {
     uint32_t size;           /* Size of this structure */

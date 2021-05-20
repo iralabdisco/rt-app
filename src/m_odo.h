@@ -1,3 +1,13 @@
+/**
+ * @file m_odo.h
+ * @author Jacopo Maltagliati (j.maltagliati@campus.unimib.it)
+ * @brief The header of the Odometry thread worker.
+ *
+ * @copyright This file is part of a project released under the European Union
+ * Public License, see LICENSE and LICENSE.it for details.
+ *
+ */
+
 #ifndef M_ODO_H
 #define M_ODO_H
 

@@ -1,3 +1,14 @@
+/**
+ * @file h_time.h
+ * @author Jacopo Maltagliati (j.maltagliati@campus.unimib.it)
+ * @brief An helper header containing various timing-related structures and
+ * inlines.
+ *
+ * @copyright This file is part of a project released under the European Union
+ * Public License, see LICENSE and LICENSE.it for details.
+ *
+ */
+
 #ifndef H_TIME_H
 #define H_TIME_H
 
@@ -47,11 +58,11 @@ static nsec_t _timebase;  // HACK The implementation of timebase is yanky...
                           // it could use a refactor, as I'd like to
                           // initialize it just before launching the threads
 
-/** @brief Convert timespec to nanoseconds.
+/** @brief Convert a timespec to nanoseconds.
  *
- *  @param ts A pointer to the timespec variable to be converted.
+ *  @param ts A pointer to the timespec to be converted.
  *
- *  @return The scalar nanosecond representation of the timespec parameter.
+ *  @return The scalar nanosecond representation of the timespec.
  */
 static inline nsec_t HTime_TsToNs(const timespec_t* ts) {
     return ((nsec_t)ts->tv_sec * NSEC_PER_SEC) + ts->tv_nsec;
@@ -60,11 +71,10 @@ static inline nsec_t HTime_TsToNs(const timespec_t* ts) {
 /**
  * @brief Get the time from the clock specified by USE_CLOCK in nanoseconds.
  *
- * @param ts A pointer to the timespec structure where to store the
- * intermediate result.
+ * @param ts A pointer to a timespec structure where to store the intermediate
+ * result.
  *
- * @return The scalar nanosecond representation of the timespec
- * parameter.
+ * @return The scalar nanosecond representation of the timespec.
  */
 static inline nsec_t HTime_GetNs(timespec_t* ts) {
     if (clock_gettime(USE_CLOCK, ts) == -1) {

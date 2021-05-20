@@ -1,3 +1,14 @@
+/**
+ * @file config.h
+ * @author Jacopo Maltagliati (j.maltagliati@campus.unimib.it)
+ * @brief A header containing defines used to change the behavior of the
+ * program.
+ *
+ * @copyright This file is part of a project released under the European Union
+ * Public License, see LICENSE and LICENSE.it for details.
+ *
+ */
+
 #ifndef CONFIG_H
 #define CONFIG_H
 

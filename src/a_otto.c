@@ -1,8 +1,19 @@
+/**
+ * @file a_otto.c
+ * @author Jacopo Maltagliati (j.maltagliati@campus.unimib.it)
+ * @brief The source of the adapter for the Otto mobile platform.
+ *
+ * @copyright This file is part of a project released under the European Union
+ * Public License, see LICENSE and LICENSE.it for details.
+ *
+ */
+
 #include "a_otto.h"
 
 /**
  * @brief Initialize the Otto mobile platform adapter, opening and configuring
  * the serial port.
+ * @see https://www.cmrr.umn.edu/~strupp/serial.html
  *
  * @return The file descriptor of the character special device
  * representing Otto's UART.
@@ -100,20 +111,20 @@ int AOtto_Init(void) {
 }
 
 /**
- * @brief Read a data packet from the Otto mobile platform and deserialize it,
- * turning it into a StatusMessage struct.
+ * @brief Read a specified number of bytes from a serial port, specified by
+ * `fd`, into a buffer
  *
  * @param fd The character special device representing Otto's UART.
- * @param msg The decoded message.
+ * @param bytes The maximum number of bytes that are going to be read.
+ * @param buf The buffer where the bytes received from the serial port are
+ * going to be stored.
+ *
+ * @return The number of bytes that have been successfully read.
  *
  * @throw read() If the peripheral is detached, it will stop responding
- * and the read() call will fail. Since we have no hardware recovery method
- * the application will be terminated but be noted that this is not an
- * acceptable recovery behavior in a real-world scenario.
- *
- * @throw pb_decode() Due to timing issues, a message might not get
- * decoded correctly. If that happens, clear the StatusMessage struct and set
- * the StatusMessage::status field to OTTO_UNKNOWN_ERROR and return.
+ * and the `read()` call will fail. Since we have no recovery behavior defined
+ * on the mobile platform the application will be terminated but be noted that
+ * this is not an acceptable recovery behavior in a real-world scenario.
  */
 int AOtto_Read(int fd, int bytes, pb_byte_t* buf) {
     int res = read(fd, buf, bytes);
@@ -128,6 +139,18 @@ int AOtto_Read(int fd, int bytes, pb_byte_t* buf) {
     return res;
 }
 
+/**
+ * @brief Deserialize a data packet stored into a buffer and turn it into a
+ * StatusMessage.
+ *
+ * @param buf The buffer where the packet is stored.
+ * @param bytes The length of the encoded packet.
+ * @param msg The decoded message.
+ *
+ * @throw pb_decode() Due to communication issues, a message might not get
+ * decoded correctly. If that happens we clear the `StatusMessage` struct, set
+ * the `status` field to `OTTO_UNKNOWN_ERROR`, and return.
+ */
 void AOtto_Deserialize(pb_byte_t* buf, int bytes, StatusMessage* msg) {
     pb_istream_t stream = pb_istream_from_buffer(buf, bytes);
 
@@ -144,6 +167,13 @@ void AOtto_Deserialize(pb_byte_t* buf, int bytes, StatusMessage* msg) {
     return;
 }
 
+/**
+ * @brief
+ *
+ * @param fd
+ * @param cmd
+ */
+// TODO document Aotto_SerializeWrite
 void AOtto_SerializeWrite(int fd, VelocityCommand cmd) {
     static pb_byte_t buf[10];
     pb_ostream_t stream = pb_ostream_from_buffer(buf, sizeof(buf));
