@@ -10,6 +10,8 @@
 
 #include "a_otto.h"
 
+const VelocityCommand ottoWakeupCommands[2] = {{-0.1, 0}, {0, 0}};
+
 /**
  * @brief Initialize the Otto mobile platform adapter, opening and configuring
  * the serial port.
@@ -59,24 +61,18 @@ int AOtto_Init(void) {
         exit(EXIT_FAILURE);
     }
 
-    /* OFLAGS -- Turn off output processing
-     * Equates to:
-     * tty.c_oflag &= ~(OCRNL | ONLCR | ONLRET |
-     *                     ONOCR | ONOEOT| OFILL | OLCUC | OPOST);
-     */
-    tty.c_oflag &= ~(OCRNL | ONLCR | ONLRET | ONOCR | OFILL | OLCUC | OPOST);
+    tty.c_cflag |= (CLOCAL | CREAD); /* ignore modem controls */
+    tty.c_cflag &= ~CSIZE;
+    tty.c_cflag |= CS8;      /* 8-bit characters */
+    tty.c_cflag &= ~PARENB;  /* no parity bit */
+    tty.c_cflag &= ~CSTOPB;  /* only need 1 stop bit */
+    tty.c_cflag &= ~CRTSCTS; /* no hardware flowcontrol */
 
-    // LFLAGS -- Turn off canonical mode and line processing
-    tty.c_lflag = 0;
-
-    // IFLAGS -- Turn off input processing
-    tty.c_iflag &= ~(IGNBRK | ISTRIP | IGNCR | BRKINT | ICRNL | INLCR |
-                     PARMRK | INPCK | ISTRIP | IXON | IXOFF | IXANY);
-    // tty.c_iflag |= IGNBRK | ISTRIP;
-
-    // CFLAGS -- Turn off character processing and set input width to 8 bit
-    tty.c_cflag &= ~(CSIZE | PARENB | CSTOPB);
-    tty.c_cflag |= (CS8 | CRTSCTS | CLOCAL);
+    /* setup for non-canonical mode */
+    tty.c_iflag &=
+        ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+    tty.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+    tty.c_oflag &= ~OPOST;
 
     // CC -- Read parameters
     tty.c_cc[VMIN] =
@@ -100,12 +96,26 @@ int AOtto_Init(void) {
         exit(EXIT_FAILURE);
     }
 
+#ifdef OTTO_DTR_JUMPER_PRESENT
     // Reset the STM via DTR
-    ioctl(fd, TIOCMBIC, TIOCM_DTR);
-    sleep(1);
-    ioctl(fd, TIOCMBIS, TIOCM_DTR);
+    while (1) {
+        int status = 0xFF;
+        if (ioctl(fd, TIOCMGET, &status) != 0) {
+            perror("Failed to get control line status");
+            return 1;
+        }
 
-    sleep(2);  // wait for serial port to become ready
+        printf("status: 0x%x\n", status);
+        status ^= TIOCM_DTR;
+
+        if (ioctl(fd, TIOCMSET, status) != 0) {
+            perror("Failed to set control line status");
+        }
+
+        usleep(500000);
+    }
+#endif
+    sleep(1);  // wait for serial port to become ready
 
     return fd;
 }
@@ -132,7 +142,7 @@ int AOtto_Read(int fd, int bytes, pb_byte_t* buf) {
         // TODO recovery, the system might stop responding and we need
         // some fallback logic
 #ifdef CONFIG_PRINT_ERRORS
-        perror("AOtto_ReadDeserialize");
+        perror("AOtto_Read");
 #endif  // CONFIG_PRINT_ERRORS
         exit(EXIT_FAILURE);
     }
@@ -149,12 +159,16 @@ int AOtto_Read(int fd, int bytes, pb_byte_t* buf) {
  *
  * @throw pb_decode() Due to communication issues, a message might not get
  * decoded correctly. If that happens we clear the `StatusMessage` struct, set
- * the `status` field to `OTTO_UNKNOWN_ERROR`, and return.
+ * the `status` field to `OTTO_UNKNOWN_ERROR`, and return. \b NOTE the
+ * behavior has been changed and now the program will be killed on failure to
+ * decode
  */
 void AOtto_Deserialize(pb_byte_t* buf, int bytes, StatusMessage* msg) {
+    // TODO document change in behavior
     pb_istream_t stream = pb_istream_from_buffer(buf, bytes);
 
     if (!pb_decode(&stream, StatusMessage_fields, msg)) {
+#if CONFIG_OTTO_DESER_OLD_BEHAVIOR
         msg->angular_velocity = 0;
         msg->delta_millis = 0;
         msg->linear_velocity = 0;
@@ -163,6 +177,15 @@ void AOtto_Deserialize(pb_byte_t* buf, int bytes, StatusMessage* msg) {
         syslog(LOG_ERR, "%s%s",
                "(A_OTTO_IN) NanoPB: ", PB_GET_ERROR(&stream));
 #endif  // CONFIG_ENABLE_LOGGING
+#else
+        printf("%s%s", "(A_OTTO_IN) NanoPB: ", PB_GET_ERROR(&stream));
+        printf("\nBuffer trace:\n<");
+        for (int i = 0; i < bytes; i++) {
+            printf("%02X ", buf[i]);
+        }
+        printf(">\n");
+        exit(EXIT_FAILURE);
+#endif  // CONFIG_OTTO_DESER_OLD_BEHAVIOR
     }
     return;
 }
@@ -195,5 +218,6 @@ void AOtto_SerializeWrite(int fd, VelocityCommand cmd) {
 #endif  // CONFIG_PRINT_ERRORS
         exit(EXIT_FAILURE);
     }
-    printf("W_OK %i\n", res);
+    usleep(res * 100);  // Wait for the write to go through
+    // printf("W_OK %i\n", res);
 }

@@ -28,7 +28,6 @@
 // linear/angular velocities
 #include "otto_communication/otto_communication.pb.h"
 
-
 /** @brief Path to the character special device representing Otto's UART.
  * \n \b IMPORTANT make sure you check this before compiling. */
 #define OTTO_PORT "/dev/ttyUSB0"
@@ -55,12 +54,12 @@
    or decoding logic, and the data has to be treated as garbage. */
 #define OTTO_UNKNOWN_ERROR 6
 
+extern const VelocityCommand ottoWakeupCommands[2];
+
 int AOtto_Init(void);
 int AOtto_Read(int fd, int bytes, pb_byte_t* buf);
 void AOtto_Deserialize(pb_byte_t* buf, int bytes, StatusMessage* msg);
 
 void AOtto_SerializeWrite(int fd, VelocityCommand cmd);
-
-#define OTTO_COMMAND_SAMPLES 10
 
 #endif  // A_OTTO_H

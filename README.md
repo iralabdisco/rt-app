@@ -43,7 +43,7 @@ The project is structured as follows:
 
 ## Building
 
-On apt-based system do:
+On apt-based systems do:
 
 ```
 $ sudo apt install build-essential git doxygen libnanopb-dev nanopb
@@ -56,16 +56,3 @@ $ make
 ```
 
 to build an executable.
-
-## Modules
-
-The project follows a modular approach: each module must implement a quite basic public interface, consisting only of a generic worker function, which signature must be `void* (*name)(void*)`.
-
-### Odometry
-
-1. Encoder
-   1. Coefficiente che dice a quale frazione di un arco corrisponde un tick (schedina)
-1. Rototraslazione
-   1. Traslo in CIR (discorde con y)
-   1. Ruoto (discorde $\Delta\theta$)
-   1. Ritraslo (concorde con y)

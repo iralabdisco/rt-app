@@ -14,13 +14,17 @@
 
 /** @brief Terminate the Odometry thread after a number of iterations. Use in
  * conjunction with `CONFIG_MAX_ITERS`. */
-#define CONFIG_CUT_SHORT 1
+#define CONFIG_CUT_SHORT 0
 /** @brief Define the number of iterations after which the Odometry thread
  * must be terminated. Only used if `CONFIG_CUT_SHORT` is set to `1`. */
 #define CONFIG_MAX_ITERS 100
 
 #define CONFIG_PRINT_ERRORS 1
-#define CONFIG_PRINT_MSG_VALUES 1
+#define CONFIG_PRINT_MSG_VALUES 0
+
+#define CONFIG_OTTO_DESER_OLD_BEHAVIOR 1
+
+#define CONFIG_OTTO_DEMO 1
 
 /**
  * @brief Enable logging via `syslog()` (see `man syslog(3)` for details).

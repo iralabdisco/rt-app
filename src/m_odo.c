@@ -55,6 +55,18 @@ void* MOdo_EntryPoint(void* args) {
     assert(args ==
            NULL);  // Ensure we are not passing arguments (I admit doing
                    // this only to remove a compile-time warning)
+
+    // Serial shenanigans
+    int ottoSerialFd; /** @brief The file descriptor pointing to the serial
+                       * adapter connected to Otto */
+    StatusMessage msg = StatusMessage_init_zero;
+    pb_byte_t recvBuf[20], tmpBuf[20];
+    int bytesRead = 0, bytesReadTotal = 0, lastBytesRead = 0, bytesMissing;
+    ottoSerialFd = AOtto_Init();
+    AOtto_SerializeWrite(ottoSerialFd, ottoWakeupCommands[0]);  // Wakeuppone
+    sleep(2);
+    AOtto_SerializeWrite(ottoSerialFd, ottoWakeupCommands[1]);
+    // END serial
     struct sched_attr attr = {.size = sizeof(attr),
                               .sched_flags = 0 | SCHED_FLAG_DL_OVERRUN,
                               .sched_policy = SCHED_DEADLINE,
@@ -70,18 +82,6 @@ void* MOdo_EntryPoint(void* args) {
     }
     // BEGIN Worker variables
     struct timespec gts; /** @brief A struct used for timing calculations */
-    int ottoSerialFd;    /** @brief The file descriptor pointing to the serial
-                          * adapter connected to Otto */
-    StatusMessage msg = StatusMessage_init_zero;
-    VelocityCommand cmd = VelocityCommand_init_zero;
-    // Serial shenanigans
-    pb_byte_t recvBuf[20], tmpBuf[20];
-    int bytesRead = 0, bytesReadTotal = 0, lastBytesRead = 0, bytesMissing;
-    // TODO: rework commandSample/commandBuffer
-    int commandSample = 0;
-    VelocityCommand commandBuffer[OTTO_COMMAND_SAMPLES] = {
-        {0, 0}, {10, 0}, {10, 0}, {10, 0}, {1, 0},
-        {1, 0}, {1, 0},  {1, 0},  {0, 0},  {0, 0}};
     // Odometry stuff
     arc_t sx = 0;
     arc_t dx = 0;
@@ -96,24 +96,27 @@ void* MOdo_EntryPoint(void* args) {
                         .totalIterations = 0,
                         .clockMisses = 0};
 #endif  // CONFIG_CUT_SHORT
+#if CONFIG_OTTO_DEMO
+    int parIters = 0;
+    int curCheckpoint = 0;
+    int simIters[3] = {500, 150, 500};  // * 20ms
+    VelocityCommand simSpeeds[3] = {{-0.1, 0}, {0, 0.5}, {-0.1, 0}};
+#endif
     // END Worker variables
-    ottoSerialFd = AOtto_Init();
+
     MOdo_InitPoseBuffer(&pb);
     HTime_InitBase();  // XXX see h_time.h
-    for (int i = 0; i < 100; i++) {
-        // printf("Spamming...\n");
-        AOtto_SerializeWrite(ottoSerialFd, commandBuffer[0]);
-    }
+
     for (;;) {
         // BEGIN Worker code
         bytesMissing = 20 - bytesRead;
         bytesRead = AOtto_Read(ottoSerialFd, bytesMissing, recvBuf);
         bytesReadTotal += bytesRead;
-        printf("Read: %i (%i tot)\n", bytesRead, bytesReadTotal);
+        // printf("Read: %i (%i tot)\n", bytesRead, bytesReadTotal);
         if (bytesRead < 20) {
             for (int i = 0; i < bytesRead; i++) {
                 tmpBuf[lastBytesRead + i] = recvBuf[i];
-                printf("adding byte %2x\n", recvBuf[i]);
+                // printf("adding byte %2x\n", recvBuf[i]);
             }
             lastBytesRead += bytesRead;
         }
@@ -170,14 +173,24 @@ void* MOdo_EntryPoint(void* args) {
             break;
         }
 #endif
-        if (0) {  //(commandSample < OTTO_COMMAND_SAMPLES) {
-            cmd = commandBuffer[commandSample];
-            AOtto_SerializeWrite(ottoSerialFd, cmd);
-            commandSample++;
+#if CONFIG_OTTO_DEMO
+        parIters++;
+        if (parIters >= simIters[curCheckpoint]) {
+            parIters = 0;
+            curCheckpoint++;
         }
+        // printf("SendCommand! %i\n", parIters);
+        AOtto_SerializeWrite(ottoSerialFd, simSpeeds[curCheckpoint]);
+        if (curCheckpoint >= 3) {
+            printf("HUP!\n");
+            break;
+        }
+#endif
         // END Worker code
         sched_yield();
     };
+    AOtto_SerializeWrite(ottoSerialFd, ottoWakeupCommands[1]);  // Stop
+    printf("\n\n\n");
     pthread_exit(EXIT_SUCCESS);
     return (NULL);
 }
