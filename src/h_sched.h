@@ -1,3 +1,13 @@
+/**
+ * @file h_sched.h
+ * @author Jacopo Maltagliati (j.maltagliati@campus.unimib.it)
+ * @brief An helper header containing various scheduling-related structures.
+ *
+ * @copyright This file is part of a project released under the European Union
+ * Public License, see LICENSE and LICENSE.it for details.
+ *
+ */
+
 #ifndef H_SCHED_H
 #define H_SCHED_H
 
@@ -10,10 +20,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "config.h"
+
 /**
  * @brief Struct used by the task to communicate parameters to the scheduler
- * https://man7.org/linux/man-pages/man2/sched_getattr.2.html
- * https://www.i-programmer.info/programming/cc/13002-applying-c-deadline-scheduling.html?start=1
+ * @see https://man7.org/linux/man-pages/man2/sched_getattr.2.html
+ * @see https://www.i-programmer.info/programming/cc/13002-applying-c-deadline-scheduling.html?start=1
  */
 struct sched_attr {
     uint32_t size;           /* Size of this structure */
@@ -33,6 +45,7 @@ struct sched_attr {
  * @param pid The PID of the process whose parameters are going to be modified
  * @param attr A pointer to a sched_attr structure used to specify attributes
  * @param flags ???
+ *
  * @return On success, 0; on failure -1. The error code is stored in errno
  */
 static inline int sched_setattr(
