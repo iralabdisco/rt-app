@@ -1,3 +1,14 @@
+/**
+ * @file main.c
+ * @author Jacopo Maltagliati (j.maltagliati@campus.unimib.it)
+ * @brief The source of the entry point and thread managing portion of the
+ * demo.
+ *
+ * @copyright This file is part of a project released under the European Union
+ * Public License, see LICENSE and LICENSE.it for details.
+ *
+ */
+
 #define _GNU_SOURCE
 
 #include <assert.h>
