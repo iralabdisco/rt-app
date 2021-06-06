@@ -1,84 +1,65 @@
+/**
+ * @file a_otto.h
+ * @author Jacopo Maltagliati (j.maltagliati@campus.unimib.it)
+ * @brief The header of the adapter for the Otto mobile platform.
+ * @see https://github.com/banetl/sensor_reading/blob/master/cpp/sensor_reading.cc
+ *
+ * @copyright This file is part of a project released under the European Union
+ * Public License, see LICENSE and LICENSE.it for details.
+ *
+ */
+
 #ifndef A_OTTO_H
 #define A_OTTO_H
 
-// https://www.cmrr.umn.edu/~strupp/serial.html
-// https://github.com/banetl/sensor_reading/blob/master/cpp/sensor_reading.cc
-
-#define OTTO_BASELINE 0.435  // Presa dalla piattaforma OTTO
-
-#define OTTO_PORT "/dev/ttyUSB0"
-#define OTTO_COMMS_SPEED B115200
-
+#include <assert.h>
 #include <fcntl.h>
 #include <pb_decode.h>
+#include <pb_encode.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
+#include <syslog.h>
 #include <termios.h>
 #include <unistd.h>
 
+#include "config.h"
+// TODO change message format to include arc_l/arc_r instead of
+// linear/angular velocities
 #include "otto_communication/otto_communication.pb.h"
 
-// TODO Doxygen for AOtto_InitSerialComms()
-// XXX Move to h_otto.c?
-static inline int AOtto_InitSerialComms(void) {
-    int fd;
-    struct termios tty;
-    // Open the port
-    fd = open(OTTO_PORT, O_RDONLY | O_NOCTTY | O_SYNC);
-    if (fd < 0) {
-        perror("AOtto_InitSerialComms");
-        exit(EXIT_FAILURE);
-    }
-    /*
-    // Require exclusive access
-    if (ioctl(fd, TIOCEXCL, NULL) < 0) {
-        ... error handling...
-    }
-    */
-    // Get the port's current configuration
-    if (tcgetattr(fd, &tty) < 0) {
-        perror("AOtto_InitSerialComms: tcgetattr");
-        exit(EXIT_FAILURE);
-    }
+/** @brief Path to the character special device representing Otto's UART.
+ * \n \b IMPORTANT make sure you check this before compiling. */
+#define OTTO_PORT "/dev/ttyUSB0"
 
-    // IFLAGS -- Turn off input processing
-    tty.c_iflag &= ~(BRKINT | ICRNL | INLCR | PARMRK | INPCK | ISTRIP | IXON);
-    tty.c_iflag |= IGNBRK | ISTRIP;
+/** @brief The speed at which the computer and the UART communicate.
+ * \n \b IMPORTANT make sure it's the same as the mobile platform's before
+ * compiling. */
+#define OTTO_COMMS_SPEED B9600
 
-    /* OFLAGS -- Turn off output processing
-     * Equates to:
-     * tty.c_oflag &= ~(OCRNL | ONLCR | ONLRET |
-     *                     ONOCR | ONOEOT| OFILL | OLCUC | OPOST);
-     */
-    tty.c_oflag = 0;
+// The following defines were taken from Otto's code
+// TODO Fix Doxygen comments
 
-    // LFLAGS -- Turn off canonical mode and line processing
-    tty.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | ISIG);
+/** @brief The baseline. Refer to otto */
+#define OTTO_BASELINE 0.435
 
-    // CFLAGS -- Turn off character processing and set input width to 8 bit
-    tty.c_cflag &= ~(CSIZE | PARENB);
-    tty.c_cflag |= CS8;
+#define OTTO_UNKNOWN 0
+#define OTTO_WAITING_CONFIG 1
+#define OTTO_READY 2
+#define OTTO_RUNNING 3
+#define OTTO_H_BRIDGE_FAULT_1 4
+#define OTTO_H_BRIDGE_FAULT_2 5
 
-    // CC -- Read parameters
-    tty.c_cc[VMIN] = 20; // Number of chars to before read() can return
-    tty.c_cc[VTIME] = 0; // Delay between chars
+/** @brief An unspecified error has occurred, possibly in the  communication
+   or decoding logic, and the data has to be treated as garbage. */
+#define OTTO_UNKNOWN_ERROR 6
 
-    // Set the port's speed
-    if (cfsetispeed(&tty, OTTO_COMMS_SPEED) < 0 ||
-        cfsetospeed(&tty, OTTO_COMMS_SPEED) < 0) {
-        perror("AOtto_InitSerialComms: cfsetispeed");
-        exit(EXIT_FAILURE);
-    }
+extern const VelocityCommand ottoWakeupCommands[2];
 
-    // Set the port's config
-    if (tcsetattr(fd, TCSAFLUSH, &tty) < 0) {
-        perror("AOtto_InitSerialComms: tcsetattr");
-        exit(EXIT_FAILURE);
-    }
+int AOtto_Init(void);
+int AOtto_Read(int fd, int bytes, pb_byte_t* buf);
+void AOtto_Deserialize(pb_byte_t* buf, int bytes, StatusMessage* msg);
 
-    return fd;
-}
-
-void AOtto_ReadDeserialize(int fd, pb_byte_t* buf, StatusMessage msg);
+void AOtto_SerializeWrite(int fd, VelocityCommand cmd);
 
 #endif  // A_OTTO_H
